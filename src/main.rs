@@ -42,6 +42,24 @@ enum Commands {
     Folders(commands::folders::FoldersArgs),
     /// Manage GTM templates
     Templates(commands::templates::TemplatesArgs),
+    /// Manage container versions
+    Versions(commands::versions::VersionsArgs),
+    /// Manage version headers
+    VersionHeaders(commands::version_headers::VersionHeadersArgs),
+    /// Manage environments
+    Environments(commands::environments::EnvironmentsArgs),
+    /// Manage user permissions
+    Permissions(commands::permissions::PermissionsArgs),
+    /// Manage clients (server-side)
+    Clients(commands::clients::ClientsArgs),
+    /// Manage Google Tag configs
+    GtagConfigs(commands::gtag_configs::GtagConfigsArgs),
+    /// Manage transformations (server-side)
+    Transformations(commands::transformations::TransformationsArgs),
+    /// Manage zones (server-side)
+    Zones(commands::zones::ZonesArgs),
+    /// Manage built-in variables
+    BuiltinVariables(commands::builtin_variables::BuiltinVariablesArgs),
 }
 
 #[tokio::main]
@@ -78,6 +96,33 @@ async fn main() {
                 }
                 Commands::Templates(args) => {
                     commands::templates::handle(args, &client, &cli.format).await
+                }
+                Commands::Versions(args) => {
+                    commands::versions::handle(args, &client, &cli.format).await
+                }
+                Commands::VersionHeaders(args) => {
+                    commands::version_headers::handle(args, &client, &cli.format).await
+                }
+                Commands::Environments(args) => {
+                    commands::environments::handle(args, &client, &cli.format).await
+                }
+                Commands::Permissions(args) => {
+                    commands::permissions::handle(args, &client, &cli.format).await
+                }
+                Commands::Clients(args) => {
+                    commands::clients::handle(args, &client, &cli.format).await
+                }
+                Commands::GtagConfigs(args) => {
+                    commands::gtag_configs::handle(args, &client, &cli.format).await
+                }
+                Commands::Transformations(args) => {
+                    commands::transformations::handle(args, &client, &cli.format).await
+                }
+                Commands::Zones(args) => {
+                    commands::zones::handle(args, &client, &cli.format).await
+                }
+                Commands::BuiltinVariables(args) => {
+                    commands::builtin_variables::handle(args, &client, &cli.format).await
                 }
             }
         }

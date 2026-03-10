@@ -146,7 +146,7 @@ pub async fn handle(args: WorkspacesArgs, client: &GtmApiClient, format: &Output
                 "accounts/{}/containers/{}/workspaces/{}",
                 a.ws.account_id, a.ws.container_id, a.ws.workspace_id
             );
-            let mut body = json!({});
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }

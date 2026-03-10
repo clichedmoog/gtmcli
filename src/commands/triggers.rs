@@ -143,7 +143,8 @@ pub async fn handle(args: TriggersArgs, client: &GtmApiClient, format: &OutputFo
         }
         TriggersAction::Update(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let mut body = json!({});
+            let path = format!("{base}/triggers/{}", a.trigger_id);
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }
@@ -152,7 +153,7 @@ pub async fn handle(args: TriggersArgs, client: &GtmApiClient, format: &OutputFo
                     serde_json::from_str(&filter).map_err(|_| GtmError::InvalidParams(filter))?;
                 body["filter"] = parsed;
             }
-            let result = client.put(&format!("{base}/triggers/{}", a.trigger_id), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "trigger");
         }
         TriggersAction::Delete(a) => {

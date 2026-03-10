@@ -128,7 +128,8 @@ pub async fn handle(args: GtagConfigsArgs, client: &GtmApiClient, format: &Outpu
         }
         GtagConfigsAction::Update(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let mut body = json!({});
+            let path = format!("{base}/gtag_config/{}", a.gtag_config_id);
+            let mut body = client.get(&path).await?;
             if let Some(mid) = a.measurement_id {
                 body["measurementId"] = json!(mid);
             }
@@ -137,7 +138,7 @@ pub async fn handle(args: GtagConfigsArgs, client: &GtmApiClient, format: &Outpu
                     serde_json::from_str(p).map_err(|_| GtmError::InvalidParams(p.clone()))?;
                 body["parameter"] = json!(params_from_json(&raw));
             }
-            let result = client.put(&format!("{base}/gtag_config/{}", a.gtag_config_id), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "gtag_config");
         }
         GtagConfigsAction::Delete(a) => {

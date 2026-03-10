@@ -131,7 +131,8 @@ pub async fn handle(args: EnvironmentsArgs, client: &GtmApiClient, format: &Outp
             print_resource(&result, format, "environment");
         }
         EnvironmentsAction::Update(a) => {
-            let mut body = json!({});
+            let path = env_path(&a.e);
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }
@@ -141,7 +142,7 @@ pub async fn handle(args: EnvironmentsArgs, client: &GtmApiClient, format: &Outp
             if let Some(debug) = a.enable_debug {
                 body["enableDebug"] = json!(debug);
             }
-            let result = client.put(&env_path(&a.e), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "environment");
         }
         EnvironmentsAction::Delete(a) => {

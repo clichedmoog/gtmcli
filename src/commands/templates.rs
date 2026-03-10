@@ -149,7 +149,8 @@ pub async fn handle(args: TemplatesArgs, client: &GtmApiClient, format: &OutputF
         }
         TemplatesAction::Update(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let mut body = json!({});
+            let path = format!("{base}/templates/{}", a.template_id);
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }
@@ -162,7 +163,7 @@ pub async fn handle(args: TemplatesArgs, client: &GtmApiClient, format: &OutputF
                     }
                 }
             }
-            let result = client.put(&format!("{base}/templates/{}", a.template_id), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "template");
         }
         TemplatesAction::Delete(a) => {

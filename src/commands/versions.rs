@@ -124,14 +124,15 @@ pub async fn handle(args: VersionsArgs, client: &GtmApiClient, format: &OutputFo
             print_resource(&result, format, "version");
         }
         VersionsAction::Update(a) => {
-            let mut body = json!({});
+            let path = version_path(&a.v);
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }
             if let Some(notes) = a.notes {
                 body["notes"] = json!(notes);
             }
-            let result = client.put(&version_path(&a.v), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "version");
         }
         VersionsAction::Delete(a) => {

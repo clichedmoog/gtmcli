@@ -151,14 +151,15 @@ pub async fn handle(args: FoldersArgs, client: &GtmApiClient, format: &OutputFor
         }
         FoldersAction::Update(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let mut body = json!({});
+            let path = format!("{base}/folders/{}", a.folder_id);
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }
             if let Some(notes) = a.notes {
                 body["notes"] = json!(notes);
             }
-            let result = client.put(&format!("{base}/folders/{}", a.folder_id), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "folder");
         }
         FoldersAction::Delete(a) => {
@@ -196,8 +197,8 @@ pub async fn handle(args: FoldersArgs, client: &GtmApiClient, format: &OutputFor
         }
         FoldersAction::Entities(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let result = client.get(&format!("{base}/folders/{}/entities", a.folder_id)).await?;
-            print_resource(&result, format, "folders");
+            let result = client.post(&format!("{base}/folders/{}:entities", a.folder_id), &json!({})).await?;
+            print_resource(&result, format, "folder_entities");
         }
     }
     Ok(())

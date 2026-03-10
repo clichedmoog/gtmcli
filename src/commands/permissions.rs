@@ -109,7 +109,7 @@ pub async fn handle(args: PermissionsArgs, client: &GtmApiClient, format: &Outpu
                 "accounts/{}/user_permissions/{}",
                 a.account_id, a.permission_id
             );
-            let mut body = json!({});
+            let mut body = client.get(&path).await?;
             if let Some(aa) = a.account_access {
                 body["accountAccess"] = json!({ "permission": aa });
             }

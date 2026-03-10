@@ -95,7 +95,7 @@ pub async fn handle(args: ContainersArgs, client: &GtmApiClient, format: &Output
         }
         ContainersAction::Update(a) => {
             let path = format!("accounts/{}/containers/{}", a.account_id, a.container_id);
-            let mut body = json!({});
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }

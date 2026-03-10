@@ -129,7 +129,8 @@ pub async fn handle(args: ClientsArgs, client: &GtmApiClient, format: &OutputFor
         }
         ClientsAction::Update(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let mut body = json!({});
+            let path = format!("{base}/clients/{}", a.client_id);
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }
@@ -138,7 +139,7 @@ pub async fn handle(args: ClientsArgs, client: &GtmApiClient, format: &OutputFor
                     serde_json::from_str(p).map_err(|_| GtmError::InvalidParams(p.clone()))?;
                 body["parameter"] = json!(params_from_json(&raw));
             }
-            let result = client.put(&format!("{base}/clients/{}", a.client_id), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "client");
         }
         ClientsAction::Delete(a) => {

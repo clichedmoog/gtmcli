@@ -146,7 +146,8 @@ pub async fn handle(args: VariablesArgs, client: &GtmApiClient, format: &OutputF
         }
         VariablesAction::Update(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let mut body = json!({});
+            let path = format!("{base}/variables/{}", a.variable_id);
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }
@@ -155,15 +156,15 @@ pub async fn handle(args: VariablesArgs, client: &GtmApiClient, format: &OutputF
                     serde_json::from_str(params_str).map_err(|_| GtmError::InvalidParams(params_str.clone()))?;
                 body["parameter"] = json!(params_from_json(&raw));
             } else if let Some(value) = a.value {
-                // For update, we'd need to know the type to determine the key
-                // Default to "value" - user can use --params for full control
+                let var_type = body["type"].as_str().unwrap_or("c");
+                let key = params::get_variable_parameter_key(var_type);
                 body["parameter"] = json!([{
                     "type": "template",
-                    "key": "value",
+                    "key": key,
                     "value": value,
                 }]);
             }
-            let result = client.put(&format!("{base}/variables/{}", a.variable_id), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "variable");
         }
         VariablesAction::Delete(a) => {

@@ -54,7 +54,7 @@ pub async fn handle(args: AccountsArgs, client: &GtmApiClient, format: &OutputFo
         }
         AccountsAction::Update(a) => {
             let path = format!("accounts/{}", a.account_id);
-            let mut body = json!({});
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }

@@ -157,7 +157,9 @@ pub async fn handle(args: TagsArgs, client: &GtmApiClient, format: &OutputFormat
         }
         TagsAction::Update(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let mut body = json!({});
+            let path = format!("{base}/tags/{}", a.tag_id);
+            // GET existing tag first, then merge changes (GTM API PUT = full replace)
+            let mut body = client.get(&path).await?;
             if let Some(name) = a.name {
                 body["name"] = json!(name);
             }
@@ -173,7 +175,7 @@ pub async fn handle(args: TagsArgs, client: &GtmApiClient, format: &OutputFormat
                 body["blockingTriggerId"] = json!(a.blocking_trigger_id);
             }
 
-            let result = client.put(&format!("{base}/tags/{}", a.tag_id), &body).await?;
+            let result = client.put(&path, &body).await?;
             print_resource(&result, format, "tag");
         }
         TagsAction::Delete(a) => {

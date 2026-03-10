@@ -1,7 +1,8 @@
 use clap::{Args, Subcommand};
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::api::client::GtmApiClient;
+use crate::api::workspace::resolve_workspace;
 use crate::error::Result;
 use crate::output::formatter::{print_resource, OutputFormat};
 
@@ -49,6 +50,10 @@ pub enum WorkspacesAction {
     CreateVersion(WorkspaceCreateVersionArgs),
     /// Quick preview workspace
     QuickPreview(WorkspaceQuickPreviewArgs),
+    /// Export workspace (tags, triggers, variables, folders) to JSON
+    Export(WorkspaceExportArgs),
+    /// Import entities from a JSON export file
+    Import(WorkspaceImportArgs),
 }
 
 #[derive(Args)]
@@ -115,6 +120,32 @@ pub struct WorkspaceCreateVersionArgs {
 pub struct WorkspaceQuickPreviewArgs {
     #[command(flatten)]
     ws: WorkspaceFlags,
+}
+
+#[derive(Args)]
+pub struct WorkspaceExportArgs {
+    #[arg(long, env = "GTM_ACCOUNT_ID")]
+    account_id: String,
+    #[arg(long, env = "GTM_CONTAINER_ID")]
+    container_id: String,
+    #[arg(long, env = "GTM_WORKSPACE_ID")]
+    workspace_id: Option<String>,
+    /// Output file (default: stdout)
+    #[arg(long, short)]
+    output: Option<String>,
+}
+
+#[derive(Args)]
+pub struct WorkspaceImportArgs {
+    #[arg(long, env = "GTM_ACCOUNT_ID")]
+    account_id: String,
+    #[arg(long, env = "GTM_CONTAINER_ID")]
+    container_id: String,
+    #[arg(long, env = "GTM_WORKSPACE_ID")]
+    workspace_id: Option<String>,
+    /// Input file with exported workspace JSON
+    #[arg(long, short)]
+    input: String,
 }
 
 pub async fn handle(
@@ -212,6 +243,200 @@ pub async fn handle(
             );
             let result = client.post(&path, &json!({})).await?;
             print_resource(&result, format, "workspace");
+        }
+        WorkspacesAction::Export(a) => {
+            let ws_id = resolve_workspace(
+                client,
+                &a.account_id,
+                &a.container_id,
+                a.workspace_id.as_deref(),
+            )
+            .await?;
+            let base = format!(
+                "accounts/{}/containers/{}/workspaces/{}",
+                a.account_id, a.container_id, ws_id
+            );
+
+            let tags = client
+                .get(&format!("{base}/tags"))
+                .await
+                .unwrap_or(json!({}));
+            let triggers = client
+                .get(&format!("{base}/triggers"))
+                .await
+                .unwrap_or(json!({}));
+            let variables = client
+                .get(&format!("{base}/variables"))
+                .await
+                .unwrap_or(json!({}));
+            let folders = client
+                .get(&format!("{base}/folders"))
+                .await
+                .unwrap_or(json!({}));
+
+            let export = json!({
+                "exportVersion": "1",
+                "accountId": a.account_id,
+                "containerId": a.container_id,
+                "workspaceId": ws_id,
+                "tags": tags.get("tag").unwrap_or(&json!([])),
+                "triggers": triggers.get("trigger").unwrap_or(&json!([])),
+                "variables": variables.get("variable").unwrap_or(&json!([])),
+                "folders": folders.get("folder").unwrap_or(&json!([])),
+            });
+
+            let output = serde_json::to_string_pretty(&export).unwrap();
+            if let Some(path) = a.output {
+                std::fs::write(&path, &output).map_err(crate::error::GtmError::Io)?;
+                eprintln!("Exported to {path}");
+            } else {
+                println!("{output}");
+            }
+        }
+        WorkspacesAction::Import(a) => {
+            let ws_id = resolve_workspace(
+                client,
+                &a.account_id,
+                &a.container_id,
+                a.workspace_id.as_deref(),
+            )
+            .await?;
+            let base = format!(
+                "accounts/{}/containers/{}/workspaces/{}",
+                a.account_id, a.container_id, ws_id
+            );
+
+            let data = std::fs::read_to_string(&a.input).map_err(crate::error::GtmError::Io)?;
+            let export: Value = serde_json::from_str(&data)
+                .map_err(|_| crate::error::GtmError::InvalidParams(a.input.clone()))?;
+
+            // Create folders first
+            let mut folder_id_map: std::collections::HashMap<String, String> =
+                std::collections::HashMap::new();
+            if let Some(folders) = export["folders"].as_array() {
+                for folder in folders {
+                    let body = json!({
+                        "name": folder["name"],
+                        "notes": folder.get("notes").unwrap_or(&json!(null)),
+                    });
+                    let result = client.post(&format!("{base}/folders"), &body).await?;
+                    if let (Some(old_id), Some(new_id)) =
+                        (folder["folderId"].as_str(), result["folderId"].as_str())
+                    {
+                        folder_id_map.insert(old_id.to_string(), new_id.to_string());
+                    }
+                    eprintln!("Created folder: {}", folder["name"].as_str().unwrap_or("?"));
+                }
+            }
+
+            // Create triggers
+            let mut trigger_id_map: std::collections::HashMap<String, String> =
+                std::collections::HashMap::new();
+            if let Some(triggers) = export["triggers"].as_array() {
+                for trigger in triggers {
+                    let mut body = json!({
+                        "name": trigger["name"],
+                        "type": trigger["type"],
+                    });
+                    // Copy relevant fields
+                    for key in [
+                        "customEventFilter",
+                        "filter",
+                        "autoEventFilter",
+                        "waitForTags",
+                        "checkValidation",
+                        "waitForTagsTimeout",
+                        "uniqueTriggerId",
+                        "parameter",
+                    ] {
+                        if trigger.get(key).is_some() {
+                            body[key] = trigger[key].clone();
+                        }
+                    }
+                    let result = client.post(&format!("{base}/triggers"), &body).await?;
+                    if let (Some(old_id), Some(new_id)) =
+                        (trigger["triggerId"].as_str(), result["triggerId"].as_str())
+                    {
+                        trigger_id_map.insert(old_id.to_string(), new_id.to_string());
+                    }
+                    eprintln!(
+                        "Created trigger: {}",
+                        trigger["name"].as_str().unwrap_or("?")
+                    );
+                }
+            }
+
+            // Create variables
+            if let Some(variables) = export["variables"].as_array() {
+                for variable in variables {
+                    let mut body = json!({
+                        "name": variable["name"],
+                        "type": variable["type"],
+                    });
+                    if variable.get("parameter").is_some() {
+                        body["parameter"] = variable["parameter"].clone();
+                    }
+                    if let Some(old_folder) = variable["parentFolderId"].as_str() {
+                        if let Some(new_folder) = folder_id_map.get(old_folder) {
+                            body["parentFolderId"] = json!(new_folder);
+                        }
+                    }
+                    client.post(&format!("{base}/variables"), &body).await?;
+                    eprintln!(
+                        "Created variable: {}",
+                        variable["name"].as_str().unwrap_or("?")
+                    );
+                }
+            }
+
+            // Create tags (with remapped trigger IDs)
+            if let Some(tags) = export["tags"].as_array() {
+                for tag in tags {
+                    let mut body = json!({
+                        "name": tag["name"],
+                        "type": tag["type"],
+                    });
+                    if tag.get("parameter").is_some() {
+                        body["parameter"] = tag["parameter"].clone();
+                    }
+                    // Remap firing trigger IDs
+                    if let Some(ids) = tag["firingTriggerId"].as_array() {
+                        let new_ids: Vec<&str> = ids
+                            .iter()
+                            .filter_map(|id| {
+                                id.as_str()
+                                    .and_then(|old| trigger_id_map.get(old))
+                                    .map(|s| s.as_str())
+                            })
+                            .collect();
+                        if !new_ids.is_empty() {
+                            body["firingTriggerId"] = json!(new_ids);
+                        }
+                    }
+                    if let Some(ids) = tag["blockingTriggerId"].as_array() {
+                        let new_ids: Vec<&str> = ids
+                            .iter()
+                            .filter_map(|id| {
+                                id.as_str()
+                                    .and_then(|old| trigger_id_map.get(old))
+                                    .map(|s| s.as_str())
+                            })
+                            .collect();
+                        if !new_ids.is_empty() {
+                            body["blockingTriggerId"] = json!(new_ids);
+                        }
+                    }
+                    if let Some(old_folder) = tag["parentFolderId"].as_str() {
+                        if let Some(new_folder) = folder_id_map.get(old_folder) {
+                            body["parentFolderId"] = json!(new_folder);
+                        }
+                    }
+                    client.post(&format!("{base}/tags"), &body).await?;
+                    eprintln!("Created tag: {}", tag["name"].as_str().unwrap_or("?"));
+                }
+            }
+
+            eprintln!("Import complete.");
         }
     }
     Ok(())

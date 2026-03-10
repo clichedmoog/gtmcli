@@ -41,7 +41,11 @@ pub struct AccountUpdateArgs {
     pub share_data: Option<bool>,
 }
 
-pub async fn handle(args: AccountsArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: AccountsArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         AccountsAction::List => {
             let result = client.get("accounts").await?;

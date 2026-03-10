@@ -109,7 +109,13 @@ pub struct TagsRevertArgs {
 }
 
 async fn workspace_path(ws: &WorkspaceFlags, client: &GtmApiClient) -> Result<String> {
-    let ws_id = resolve_workspace(client, &ws.account_id, &ws.container_id, ws.workspace_id.as_deref()).await?;
+    let ws_id = resolve_workspace(
+        client,
+        &ws.account_id,
+        &ws.container_id,
+        ws.workspace_id.as_deref(),
+    )
+    .await?;
     Ok(format!(
         "accounts/{}/containers/{}/workspaces/{}",
         ws.account_id, ws.container_id, ws_id
@@ -164,8 +170,8 @@ pub async fn handle(args: TagsArgs, client: &GtmApiClient, format: &OutputFormat
                 body["name"] = json!(name);
             }
             if let Some(params) = &a.params {
-                let raw: serde_json::Value =
-                    serde_json::from_str(params).map_err(|_| GtmError::InvalidParams(params.clone()))?;
+                let raw: serde_json::Value = serde_json::from_str(params)
+                    .map_err(|_| GtmError::InvalidParams(params.clone()))?;
                 body["parameter"] = json!(params_from_json(&raw));
             }
             if !a.firing_trigger_id.is_empty() {

@@ -49,8 +49,7 @@ pub async fn login(config: &Config) -> Result<TokenData> {
 
 /// Ensure we have a valid access token, refreshing if needed.
 pub async fn ensure_valid_token(config: &Config) -> Result<String> {
-    let token = token_store::load_token(&config.token_path)?
-        .ok_or(GtmError::AuthRequired)?;
+    let token = token_store::load_token(&config.token_path)?.ok_or(GtmError::AuthRequired)?;
 
     if !token.is_expired() {
         return Ok(token.access_token);
@@ -109,11 +108,7 @@ fn receive_auth_code(listener: TcpListener) -> Result<String> {
     Ok(code)
 }
 
-async fn exchange_code(
-    creds: &Credentials,
-    code: &str,
-    redirect_uri: &str,
-) -> Result<TokenData> {
+async fn exchange_code(creds: &Credentials, code: &str, redirect_uri: &str) -> Result<TokenData> {
     let client = reqwest::Client::new();
     let resp = client
         .post(OAUTH_TOKEN_URL)
@@ -147,10 +142,7 @@ async fn exchange_code(
     })
 }
 
-async fn refresh_access_token(
-    creds: &Credentials,
-    refresh_token: &str,
-) -> Result<TokenData> {
+async fn refresh_access_token(creds: &Credentials, refresh_token: &str) -> Result<TokenData> {
     let client = reqwest::Client::new();
     let resp = client
         .post(OAUTH_TOKEN_URL)

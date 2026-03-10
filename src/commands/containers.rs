@@ -72,7 +72,11 @@ pub struct ContainerLookupArgs {
     pub public_id: String,
 }
 
-pub async fn handle(args: ContainersArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: ContainersArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         ContainersAction::List(a) => {
             let path = format!("accounts/{}/containers", a.account_id);

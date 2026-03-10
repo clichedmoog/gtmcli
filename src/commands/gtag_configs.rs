@@ -93,14 +93,24 @@ pub struct GtagRevertArgs {
 }
 
 async fn workspace_path(ws: &WorkspaceFlags, client: &GtmApiClient) -> Result<String> {
-    let ws_id = resolve_workspace(client, &ws.account_id, &ws.container_id, ws.workspace_id.as_deref()).await?;
+    let ws_id = resolve_workspace(
+        client,
+        &ws.account_id,
+        &ws.container_id,
+        ws.workspace_id.as_deref(),
+    )
+    .await?;
     Ok(format!(
         "accounts/{}/containers/{}/workspaces/{}",
         ws.account_id, ws.container_id, ws_id
     ))
 }
 
-pub async fn handle(args: GtagConfigsArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: GtagConfigsArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         GtagConfigsAction::List(a) => {
             let base = workspace_path(&a.ws, client).await?;
@@ -109,7 +119,9 @@ pub async fn handle(args: GtagConfigsArgs, client: &GtmApiClient, format: &Outpu
         }
         GtagConfigsAction::Get(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let result = client.get(&format!("{base}/gtag_config/{}", a.gtag_config_id)).await?;
+            let result = client
+                .get(&format!("{base}/gtag_config/{}", a.gtag_config_id))
+                .await?;
             print_resource(&result, format, "gtag_config");
         }
         GtagConfigsAction::Create(a) => {
@@ -143,13 +155,18 @@ pub async fn handle(args: GtagConfigsArgs, client: &GtmApiClient, format: &Outpu
         }
         GtagConfigsAction::Delete(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            client.delete(&format!("{base}/gtag_config/{}", a.gtag_config_id)).await?;
+            client
+                .delete(&format!("{base}/gtag_config/{}", a.gtag_config_id))
+                .await?;
             crate::output::formatter::print_deleted("gtag_config", &a.gtag_config_id);
         }
         GtagConfigsAction::Revert(a) => {
             let base = workspace_path(&a.ws, client).await?;
             let result = client
-                .post(&format!("{base}/gtag_config/{}:revert", a.gtag_config_id), &json!({}))
+                .post(
+                    &format!("{base}/gtag_config/{}:revert", a.gtag_config_id),
+                    &json!({}),
+                )
                 .await?;
             print_resource(&result, format, "gtag_config");
         }

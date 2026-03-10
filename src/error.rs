@@ -31,7 +31,10 @@ pub type Result<T> = std::result::Result<T, GtmError>;
 impl GtmError {
     pub fn exit_with_message(&self) -> ! {
         eprintln!("Error: {self}");
-        if matches!(self, GtmError::AuthRequired | GtmError::TokenRefreshFailed(_)) {
+        if matches!(
+            self,
+            GtmError::AuthRequired | GtmError::TokenRefreshFailed(_)
+        ) {
             eprintln!("Hint: Run `gtm auth login` to authenticate.");
         }
         std::process::exit(1);

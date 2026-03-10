@@ -112,14 +112,24 @@ pub struct TemplatesImportArgs {
 }
 
 async fn workspace_path(ws: &WorkspaceFlags, client: &GtmApiClient) -> Result<String> {
-    let ws_id = resolve_workspace(client, &ws.account_id, &ws.container_id, ws.workspace_id.as_deref()).await?;
+    let ws_id = resolve_workspace(
+        client,
+        &ws.account_id,
+        &ws.container_id,
+        ws.workspace_id.as_deref(),
+    )
+    .await?;
     Ok(format!(
         "accounts/{}/containers/{}/workspaces/{}",
         ws.account_id, ws.container_id, ws_id
     ))
 }
 
-pub async fn handle(args: TemplatesArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: TemplatesArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         TemplatesAction::List(a) => {
             let base = workspace_path(&a.ws, client).await?;
@@ -128,7 +138,9 @@ pub async fn handle(args: TemplatesArgs, client: &GtmApiClient, format: &OutputF
         }
         TemplatesAction::Get(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let result = client.get(&format!("{base}/templates/{}", a.template_id)).await?;
+            let result = client
+                .get(&format!("{base}/templates/{}", a.template_id))
+                .await?;
             print_resource(&result, format, "template");
         }
         TemplatesAction::Create(a) => {
@@ -168,13 +180,18 @@ pub async fn handle(args: TemplatesArgs, client: &GtmApiClient, format: &OutputF
         }
         TemplatesAction::Delete(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            client.delete(&format!("{base}/templates/{}", a.template_id)).await?;
+            client
+                .delete(&format!("{base}/templates/{}", a.template_id))
+                .await?;
             crate::output::formatter::print_deleted("template", &a.template_id);
         }
         TemplatesAction::Revert(a) => {
             let base = workspace_path(&a.ws, client).await?;
             let result = client
-                .post(&format!("{base}/templates/{}:revert", a.template_id), &json!({}))
+                .post(
+                    &format!("{base}/templates/{}:revert", a.template_id),
+                    &json!({}),
+                )
                 .await?;
             print_resource(&result, format, "template");
         }

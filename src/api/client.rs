@@ -25,7 +25,12 @@ impl GtmApiClient {
     pub async fn get(&self, path: &str) -> Result<Value> {
         let url = format!("{API_BASE}/{path}");
         let auth = self.auth_header().await?;
-        let resp = self.http.get(&url).header("Authorization", &auth).send().await?;
+        let resp = self
+            .http
+            .get(&url)
+            .header("Authorization", &auth)
+            .send()
+            .await?;
         Self::handle_response(resp).await
     }
 

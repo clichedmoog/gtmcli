@@ -102,14 +102,24 @@ pub struct VariablesRevertArgs {
 }
 
 async fn workspace_path(ws: &WorkspaceFlags, client: &GtmApiClient) -> Result<String> {
-    let ws_id = resolve_workspace(client, &ws.account_id, &ws.container_id, ws.workspace_id.as_deref()).await?;
+    let ws_id = resolve_workspace(
+        client,
+        &ws.account_id,
+        &ws.container_id,
+        ws.workspace_id.as_deref(),
+    )
+    .await?;
     Ok(format!(
         "accounts/{}/containers/{}/workspaces/{}",
         ws.account_id, ws.container_id, ws_id
     ))
 }
 
-pub async fn handle(args: VariablesArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: VariablesArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         VariablesAction::List(a) => {
             let base = workspace_path(&a.ws, client).await?;
@@ -118,7 +128,9 @@ pub async fn handle(args: VariablesArgs, client: &GtmApiClient, format: &OutputF
         }
         VariablesAction::Get(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let result = client.get(&format!("{base}/variables/{}", a.variable_id)).await?;
+            let result = client
+                .get(&format!("{base}/variables/{}", a.variable_id))
+                .await?;
             print_resource(&result, format, "variable");
         }
         VariablesAction::Create(a) => {
@@ -129,8 +141,8 @@ pub async fn handle(args: VariablesArgs, client: &GtmApiClient, format: &OutputF
             });
 
             if let Some(params_str) = &a.params {
-                let raw: serde_json::Value =
-                    serde_json::from_str(params_str).map_err(|_| GtmError::InvalidParams(params_str.clone()))?;
+                let raw: serde_json::Value = serde_json::from_str(params_str)
+                    .map_err(|_| GtmError::InvalidParams(params_str.clone()))?;
                 body["parameter"] = json!(params_from_json(&raw));
             } else if let Some(value) = &a.value {
                 let key = params::get_variable_parameter_key(&a.variable_type);
@@ -152,8 +164,8 @@ pub async fn handle(args: VariablesArgs, client: &GtmApiClient, format: &OutputF
                 body["name"] = json!(name);
             }
             if let Some(params_str) = &a.params {
-                let raw: serde_json::Value =
-                    serde_json::from_str(params_str).map_err(|_| GtmError::InvalidParams(params_str.clone()))?;
+                let raw: serde_json::Value = serde_json::from_str(params_str)
+                    .map_err(|_| GtmError::InvalidParams(params_str.clone()))?;
                 body["parameter"] = json!(params_from_json(&raw));
             } else if let Some(value) = a.value {
                 let var_type = body["type"].as_str().unwrap_or("c");
@@ -169,13 +181,18 @@ pub async fn handle(args: VariablesArgs, client: &GtmApiClient, format: &OutputF
         }
         VariablesAction::Delete(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            client.delete(&format!("{base}/variables/{}", a.variable_id)).await?;
+            client
+                .delete(&format!("{base}/variables/{}", a.variable_id))
+                .await?;
             crate::output::formatter::print_deleted("variable", &a.variable_id);
         }
         VariablesAction::Revert(a) => {
             let base = workspace_path(&a.ws, client).await?;
             let result = client
-                .post(&format!("{base}/variables/{}:revert", a.variable_id), &json!({}))
+                .post(
+                    &format!("{base}/variables/{}:revert", a.variable_id),
+                    &json!({}),
+                )
                 .await?;
             print_resource(&result, format, "variable");
         }

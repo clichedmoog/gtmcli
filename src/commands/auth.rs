@@ -33,28 +33,23 @@ pub async fn handle(args: AuthArgs, config: &Config) -> Result<()> {
                 eprintln!("No token found.");
             }
         }
-        AuthAction::Status => {
-            match token_store::load_token(&config.token_path)? {
-                Some(token) => {
-                    if token.is_expired() {
-                        eprintln!("Status: Token expired (will refresh on next request)");
-                    } else {
-                        eprintln!("Status: Authenticated");
-                    }
-                    if let Some(expires_at) = token.expires_at {
-                        eprintln!("Expires: {expires_at}");
-                    }
-                    eprintln!(
-                        "Has refresh token: {}",
-                        token.refresh_token.is_some()
-                    );
+        AuthAction::Status => match token_store::load_token(&config.token_path)? {
+            Some(token) => {
+                if token.is_expired() {
+                    eprintln!("Status: Token expired (will refresh on next request)");
+                } else {
+                    eprintln!("Status: Authenticated");
                 }
-                None => {
-                    eprintln!("Status: Not authenticated");
-                    eprintln!("Run `gtm auth login` to authenticate.");
+                if let Some(expires_at) = token.expires_at {
+                    eprintln!("Expires: {expires_at}");
                 }
+                eprintln!("Has refresh token: {}", token.refresh_token.is_some());
             }
-        }
+            None => {
+                eprintln!("Status: Not authenticated");
+                eprintln!("Run `gtm auth login` to authenticate.");
+            }
+        },
     }
     Ok(())
 }

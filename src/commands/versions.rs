@@ -112,7 +112,11 @@ fn version_path(v: &VersionFlags) -> String {
     )
 }
 
-pub async fn handle(args: VersionsArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: VersionsArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         VersionsAction::List(a) => {
             let path = format!("{}/versions", container_path(&a.c));

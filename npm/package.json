@@ -1,0 +1,36 @@
+{
+  "name": "@clichedmoog/gtm",
+  "version": "0.1.0",
+  "description": "Google Tag Manager CLI — built for humans and AI agents",
+  "bin": {
+    "gtm": "bin/gtm"
+  },
+  "files": [
+    "bin/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clichedmoog/gtm-cli.git"
+  },
+  "keywords": [
+    "google-tag-manager",
+    "gtm",
+    "cli",
+    "tag-manager",
+    "analytics"
+  ],
+  "author": "clichedmoog",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/clichedmoog/gtm-cli/issues"
+  },
+  "homepage": "https://github.com/clichedmoog/gtm-cli#readme",
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

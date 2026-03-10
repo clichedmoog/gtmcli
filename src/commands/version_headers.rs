@@ -38,7 +38,11 @@ pub struct VersionHeadersLatestArgs {
     c: ContainerFlags,
 }
 
-pub async fn handle(args: VersionHeadersArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: VersionHeadersArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         VersionHeadersAction::List(a) => {
             let path = format!(

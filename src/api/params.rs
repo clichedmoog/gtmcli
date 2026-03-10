@@ -170,10 +170,8 @@ mod tests {
 
     #[test]
     fn test_convert_nested() {
-        let result = convert_parameter_value(
-            Some("outer"),
-            &json!({"inner": [1, {"deep": "value"}]}),
-        );
+        let result =
+            convert_parameter_value(Some("outer"), &json!({"inner": [1, {"deep": "value"}]}));
         match &result {
             GtmParameter::Map { key, map } => {
                 assert_eq!(key.as_deref(), Some("outer"));

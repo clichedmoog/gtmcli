@@ -59,10 +59,8 @@ pub struct InstalledCredentials {
 impl TokenData {
     /// Get the effective expiry time, checking both formats.
     pub fn effective_expires_at(&self) -> Option<DateTime<Utc>> {
-        self.expires_at.or_else(|| {
-            self.expiry_date
-                .and_then(|ms| DateTime::from_timestamp_millis(ms))
-        })
+        self.expires_at
+            .or_else(|| self.expiry_date.and_then(DateTime::from_timestamp_millis))
     }
 
     pub fn is_expired(&self) -> bool {

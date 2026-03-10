@@ -117,10 +117,17 @@ pub struct WorkspaceQuickPreviewArgs {
     ws: WorkspaceFlags,
 }
 
-pub async fn handle(args: WorkspacesArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: WorkspacesArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         WorkspacesAction::List(a) => {
-            let path = format!("accounts/{}/containers/{}/workspaces", a.c.account_id, a.c.container_id);
+            let path = format!(
+                "accounts/{}/containers/{}/workspaces",
+                a.c.account_id, a.c.container_id
+            );
             let result = client.get(&path).await?;
             print_resource(&result, format, "workspaces");
         }
@@ -133,7 +140,10 @@ pub async fn handle(args: WorkspacesArgs, client: &GtmApiClient, format: &Output
             print_resource(&result, format, "workspace");
         }
         WorkspacesAction::Create(a) => {
-            let path = format!("accounts/{}/containers/{}/workspaces", a.c.account_id, a.c.container_id);
+            let path = format!(
+                "accounts/{}/containers/{}/workspaces",
+                a.c.account_id, a.c.container_id
+            );
             let mut body = json!({ "name": a.name });
             if let Some(desc) = a.description {
                 body["description"] = json!(desc);

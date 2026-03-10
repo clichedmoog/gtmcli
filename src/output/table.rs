@@ -1,4 +1,4 @@
-use comfy_table::{presets::UTF8_FULL_CONDENSED, Table, ContentArrangement};
+use comfy_table::{presets::UTF8_FULL_CONDENSED, ContentArrangement, Table};
 use serde_json::Value;
 
 /// Column spec: (json_key, display_header)
@@ -45,10 +45,7 @@ pub fn render(value: &Value, resource_hint: &str) {
     println!("{table}");
 }
 
-fn detect_resource<'a>(
-    value: &'a Value,
-    hint: &str,
-) -> Option<(ColumnSpec, Vec<&'a Value>)> {
+fn detect_resource<'a>(value: &'a Value, hint: &str) -> Option<(ColumnSpec, Vec<&'a Value>)> {
     let columns = columns_for(hint);
 
     // Try to find the list wrapper key
@@ -71,11 +68,7 @@ fn detect_resource<'a>(
 
 fn columns_for(hint: &str) -> ColumnSpec {
     match hint {
-        "accounts" | "account" => &[
-            ("accountId", "ID"),
-            ("name", "Name"),
-            ("path", "Path"),
-        ],
+        "accounts" | "account" => &[("accountId", "ID"), ("name", "Name"), ("path", "Path")],
         "containers" | "container" => &[
             ("containerId", "ID"),
             ("name", "Name"),
@@ -93,27 +86,15 @@ fn columns_for(hint: &str) -> ColumnSpec {
             ("type", "Type"),
             ("parentFolderId", "Folder"),
         ],
-        "triggers" | "trigger" => &[
-            ("triggerId", "ID"),
-            ("name", "Name"),
-            ("type", "Type"),
-        ],
+        "triggers" | "trigger" => &[("triggerId", "ID"), ("name", "Name"), ("type", "Type")],
         "variables" | "variable" => &[
             ("variableId", "ID"),
             ("name", "Name"),
             ("type", "Type"),
             ("parentFolderId", "Folder"),
         ],
-        "folders" | "folder" => &[
-            ("folderId", "ID"),
-            ("name", "Name"),
-            ("notes", "Notes"),
-        ],
-        "templates" | "template" => &[
-            ("templateId", "ID"),
-            ("name", "Name"),
-            ("type", "Type"),
-        ],
+        "folders" | "folder" => &[("folderId", "ID"), ("name", "Name"), ("notes", "Notes")],
+        "templates" | "template" => &[("templateId", "ID"), ("name", "Name"), ("type", "Type")],
         "versions" | "version" | "containerVersion" => &[
             ("containerVersionId", "ID"),
             ("name", "Name"),
@@ -138,11 +119,7 @@ fn columns_for(hint: &str) -> ColumnSpec {
             ("emailAddress", "Email"),
             ("accountAccess", "Access"),
         ],
-        "clients" | "client" => &[
-            ("clientId", "ID"),
-            ("name", "Name"),
-            ("type", "Type"),
-        ],
+        "clients" | "client" => &[("clientId", "ID"), ("name", "Name"), ("type", "Type")],
         "gtag_config" | "gtag_configs" => &[
             ("gtagConfigId", "ID"),
             ("measurementId", "Measurement ID"),
@@ -153,19 +130,9 @@ fn columns_for(hint: &str) -> ColumnSpec {
             ("name", "Name"),
             ("type", "Type"),
         ],
-        "zones" | "zone" => &[
-            ("zoneId", "ID"),
-            ("name", "Name"),
-        ],
-        "built_in_variables" | "builtInVariable" => &[
-            ("name", "Name"),
-            ("type", "Type"),
-        ],
-        _ => &[
-            ("name", "Name"),
-            ("type", "Type"),
-            ("path", "Path"),
-        ],
+        "zones" | "zone" => &[("zoneId", "ID"), ("name", "Name")],
+        "built_in_variables" | "builtInVariable" => &[("name", "Name"), ("type", "Type")],
+        _ => &[("name", "Name"), ("type", "Type"), ("path", "Path")],
     }
 }
 

@@ -121,7 +121,13 @@ pub struct FoldersEntitiesArgs {
 }
 
 async fn workspace_path(ws: &WorkspaceFlags, client: &GtmApiClient) -> Result<String> {
-    let ws_id = resolve_workspace(client, &ws.account_id, &ws.container_id, ws.workspace_id.as_deref()).await?;
+    let ws_id = resolve_workspace(
+        client,
+        &ws.account_id,
+        &ws.container_id,
+        ws.workspace_id.as_deref(),
+    )
+    .await?;
     Ok(format!(
         "accounts/{}/containers/{}/workspaces/{}",
         ws.account_id, ws.container_id, ws_id
@@ -137,7 +143,9 @@ pub async fn handle(args: FoldersArgs, client: &GtmApiClient, format: &OutputFor
         }
         FoldersAction::Get(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let result = client.get(&format!("{base}/folders/{}", a.folder_id)).await?;
+            let result = client
+                .get(&format!("{base}/folders/{}", a.folder_id))
+                .await?;
             print_resource(&result, format, "folder");
         }
         FoldersAction::Create(a) => {
@@ -164,13 +172,18 @@ pub async fn handle(args: FoldersArgs, client: &GtmApiClient, format: &OutputFor
         }
         FoldersAction::Delete(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            client.delete(&format!("{base}/folders/{}", a.folder_id)).await?;
+            client
+                .delete(&format!("{base}/folders/{}", a.folder_id))
+                .await?;
             crate::output::formatter::print_deleted("folder", &a.folder_id);
         }
         FoldersAction::Revert(a) => {
             let base = workspace_path(&a.ws, client).await?;
             let result = client
-                .post(&format!("{base}/folders/{}:revert", a.folder_id), &json!({}))
+                .post(
+                    &format!("{base}/folders/{}:revert", a.folder_id),
+                    &json!({}),
+                )
                 .await?;
             print_resource(&result, format, "folder");
         }
@@ -197,7 +210,12 @@ pub async fn handle(args: FoldersArgs, client: &GtmApiClient, format: &OutputFor
         }
         FoldersAction::Entities(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let result = client.post(&format!("{base}/folders/{}:entities", a.folder_id), &json!({})).await?;
+            let result = client
+                .post(
+                    &format!("{base}/folders/{}:entities", a.folder_id),
+                    &json!({}),
+                )
+                .await?;
             print_resource(&result, format, "folder_entities");
         }
     }

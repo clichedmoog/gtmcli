@@ -94,7 +94,13 @@ pub struct ClientsRevertArgs {
 }
 
 async fn workspace_path(ws: &WorkspaceFlags, client: &GtmApiClient) -> Result<String> {
-    let ws_id = resolve_workspace(client, &ws.account_id, &ws.container_id, ws.workspace_id.as_deref()).await?;
+    let ws_id = resolve_workspace(
+        client,
+        &ws.account_id,
+        &ws.container_id,
+        ws.workspace_id.as_deref(),
+    )
+    .await?;
     Ok(format!(
         "accounts/{}/containers/{}/workspaces/{}",
         ws.account_id, ws.container_id, ws_id
@@ -110,7 +116,9 @@ pub async fn handle(args: ClientsArgs, client: &GtmApiClient, format: &OutputFor
         }
         ClientsAction::Get(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let result = client.get(&format!("{base}/clients/{}", a.client_id)).await?;
+            let result = client
+                .get(&format!("{base}/clients/{}", a.client_id))
+                .await?;
             print_resource(&result, format, "client");
         }
         ClientsAction::Create(a) => {
@@ -144,13 +152,18 @@ pub async fn handle(args: ClientsArgs, client: &GtmApiClient, format: &OutputFor
         }
         ClientsAction::Delete(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            client.delete(&format!("{base}/clients/{}", a.client_id)).await?;
+            client
+                .delete(&format!("{base}/clients/{}", a.client_id))
+                .await?;
             crate::output::formatter::print_deleted("client", &a.client_id);
         }
         ClientsAction::Revert(a) => {
             let base = workspace_path(&a.ws, client).await?;
             let result = client
-                .post(&format!("{base}/clients/{}:revert", a.client_id), &json!({}))
+                .post(
+                    &format!("{base}/clients/{}:revert", a.client_id),
+                    &json!({}),
+                )
                 .await?;
             print_resource(&result, format, "client");
         }

@@ -87,9 +87,7 @@ async fn main() {
                 Commands::Workspaces(args) => {
                     commands::workspaces::handle(args, &client, &cli.format).await
                 }
-                Commands::Tags(args) => {
-                    commands::tags::handle(args, &client, &cli.format).await
-                }
+                Commands::Tags(args) => commands::tags::handle(args, &client, &cli.format).await,
                 Commands::Triggers(args) => {
                     commands::triggers::handle(args, &client, &cli.format).await
                 }
@@ -123,15 +121,11 @@ async fn main() {
                 Commands::Transformations(args) => {
                     commands::transformations::handle(args, &client, &cli.format).await
                 }
-                Commands::Zones(args) => {
-                    commands::zones::handle(args, &client, &cli.format).await
-                }
+                Commands::Zones(args) => commands::zones::handle(args, &client, &cli.format).await,
                 Commands::BuiltinVariables(args) => {
                     commands::builtin_variables::handle(args, &client, &cli.format).await
                 }
-                Commands::Setup(args) => {
-                    commands::setup::handle(args, &client, &cli.format).await
-                }
+                Commands::Setup(args) => commands::setup::handle(args, &client, &cli.format).await,
             }
         }
     };

@@ -99,14 +99,24 @@ pub struct TriggersRevertArgs {
 }
 
 async fn workspace_path(ws: &WorkspaceFlags, client: &GtmApiClient) -> Result<String> {
-    let ws_id = resolve_workspace(client, &ws.account_id, &ws.container_id, ws.workspace_id.as_deref()).await?;
+    let ws_id = resolve_workspace(
+        client,
+        &ws.account_id,
+        &ws.container_id,
+        ws.workspace_id.as_deref(),
+    )
+    .await?;
     Ok(format!(
         "accounts/{}/containers/{}/workspaces/{}",
         ws.account_id, ws.container_id, ws_id
     ))
 }
 
-pub async fn handle(args: TriggersArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: TriggersArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         TriggersAction::List(a) => {
             let base = workspace_path(&a.ws, client).await?;
@@ -115,7 +125,9 @@ pub async fn handle(args: TriggersArgs, client: &GtmApiClient, format: &OutputFo
         }
         TriggersAction::Get(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let result = client.get(&format!("{base}/triggers/{}", a.trigger_id)).await?;
+            let result = client
+                .get(&format!("{base}/triggers/{}", a.trigger_id))
+                .await?;
             print_resource(&result, format, "trigger");
         }
         TriggersAction::Create(a) => {
@@ -158,13 +170,18 @@ pub async fn handle(args: TriggersArgs, client: &GtmApiClient, format: &OutputFo
         }
         TriggersAction::Delete(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            client.delete(&format!("{base}/triggers/{}", a.trigger_id)).await?;
+            client
+                .delete(&format!("{base}/triggers/{}", a.trigger_id))
+                .await?;
             crate::output::formatter::print_deleted("trigger", &a.trigger_id);
         }
         TriggersAction::Revert(a) => {
             let base = workspace_path(&a.ws, client).await?;
             let result = client
-                .post(&format!("{base}/triggers/{}:revert", a.trigger_id), &json!({}))
+                .post(
+                    &format!("{base}/triggers/{}:revert", a.trigger_id),
+                    &json!({}),
+                )
                 .await?;
             print_resource(&result, format, "trigger");
         }

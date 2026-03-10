@@ -75,7 +75,11 @@ pub struct PermissionsDeleteArgs {
     permission_id: String,
 }
 
-pub async fn handle(args: PermissionsArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: PermissionsArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         PermissionsAction::List(a) => {
             let path = format!("accounts/{}/user_permissions", a.account_id);

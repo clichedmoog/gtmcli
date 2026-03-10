@@ -101,7 +101,11 @@ fn env_path(e: &EnvFlags) -> String {
     )
 }
 
-pub async fn handle(args: EnvironmentsArgs, client: &GtmApiClient, format: &OutputFormat) -> Result<()> {
+pub async fn handle(
+    args: EnvironmentsArgs,
+    client: &GtmApiClient,
+    format: &OutputFormat,
+) -> Result<()> {
     match args.action {
         EnvironmentsAction::List(a) => {
             let path = format!(

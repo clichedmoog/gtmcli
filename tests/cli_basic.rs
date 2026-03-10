@@ -125,3 +125,10 @@ fn test_format_values_accepted() {
         );
     }
 }
+
+#[test]
+fn test_dry_run_flag_accepted() {
+    // --dry-run should be accepted as a global flag
+    let result = gtm().args(["--dry-run", "--help"]).assert();
+    result.success().stdout(predicate::str::contains("dry-run"));
+}

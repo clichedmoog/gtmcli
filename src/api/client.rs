@@ -11,13 +11,15 @@ const RETRY_BASE_SECS: u64 = 5;
 pub struct GtmApiClient {
     http: reqwest::Client,
     config: Config,
+    dry_run: bool,
 }
 
 impl GtmApiClient {
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: Config, dry_run: bool) -> Self {
         Self {
             http: reqwest::Client::new(),
             config,
+            dry_run,
         }
     }
 
@@ -34,6 +36,10 @@ impl GtmApiClient {
     }
 
     pub async fn post(&self, path: &str, body: &Value) -> Result<Value> {
+        if self.dry_run {
+            self.print_dry_run("POST", path, Some(body));
+            return Ok(body.clone());
+        }
         let url = format!("{API_BASE}/{path}");
         let auth = self.auth_header().await?;
         let body = body.clone();
@@ -53,6 +59,10 @@ impl GtmApiClient {
         query: &[(&str, &str)],
         body: &Value,
     ) -> Result<Value> {
+        if self.dry_run {
+            self.print_dry_run("POST", path, Some(body));
+            return Ok(body.clone());
+        }
         let url = format!("{API_BASE}/{path}");
         let auth = self.auth_header().await?;
         let body = body.clone();
@@ -71,6 +81,10 @@ impl GtmApiClient {
     }
 
     pub async fn put(&self, path: &str, body: &Value) -> Result<Value> {
+        if self.dry_run {
+            self.print_dry_run("PUT", path, Some(body));
+            return Ok(body.clone());
+        }
         let url = format!("{API_BASE}/{path}");
         let auth = self.auth_header().await?;
         let body = body.clone();
@@ -85,6 +99,10 @@ impl GtmApiClient {
 
     /// DELETE with query parameters
     pub async fn delete_with_query(&self, path: &str, query: &[(&str, &str)]) -> Result<()> {
+        if self.dry_run {
+            self.print_dry_run("DELETE", path, None);
+            return Ok(());
+        }
         let url = format!("{API_BASE}/{path}");
         let auth = self.auth_header().await?;
         let query: Vec<(String, String)> = query
@@ -101,10 +119,23 @@ impl GtmApiClient {
     }
 
     pub async fn delete(&self, path: &str) -> Result<()> {
+        if self.dry_run {
+            self.print_dry_run("DELETE", path, None);
+            return Ok(());
+        }
         let url = format!("{API_BASE}/{path}");
         let auth = self.auth_header().await?;
         self.send_delete_with_retry(|| self.http.delete(&url).header("Authorization", &auth))
             .await
+    }
+
+    fn print_dry_run(&self, method: &str, path: &str, body: Option<&Value>) {
+        eprintln!("[dry-run] {method} {API_BASE}/{path}");
+        if let Some(b) = body {
+            if let Ok(pretty) = serde_json::to_string_pretty(b) {
+                eprintln!("[dry-run] Body: {pretty}");
+            }
+        }
     }
 
     /// Send a request and parse JSON response, retrying on 429.

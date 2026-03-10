@@ -20,6 +20,10 @@ pub struct Cli {
     /// Output format
     #[arg(long, global = true, default_value = "json")]
     format: OutputFormat,
+
+    /// Show what would be done without making changes
+    #[arg(long, global = true)]
+    dry_run: bool,
 }
 
 #[derive(Subcommand)]
@@ -75,7 +79,7 @@ async fn main() {
         Commands::Auth(args) => commands::auth::handle(args, &config).await,
         Commands::Completions(args) => commands::completions::handle(args),
         _ => {
-            let client = GtmApiClient::new(config);
+            let client = GtmApiClient::new(config, cli.dry_run);
             match cli.command {
                 Commands::Auth(_) | Commands::Completions(_) => unreachable!(),
                 Commands::Accounts(args) => {

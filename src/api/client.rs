@@ -1,7 +1,7 @@
 use reqwest::RequestBuilder;
 use serde_json::Value;
 
-use crate::auth::oauth;
+use crate::auth;
 use crate::config::{Config, API_BASE};
 use crate::error::{GtmError, Result};
 
@@ -24,7 +24,7 @@ impl GtmApiClient {
     }
 
     async fn auth_header(&self) -> Result<String> {
-        let token = oauth::ensure_valid_token(&self.config).await?;
+        let token = auth::ensure_valid_token(&self.config).await?;
         Ok(format!("Bearer {token}"))
     }
 

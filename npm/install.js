@@ -7,7 +7,7 @@ const https = require("https");
 const { createGunzip } = require("zlib");
 
 const REPO = "clichedmoog/gtmcli";
-const BIN_NAME = process.platform === "win32" ? "gtm.exe" : "gtm";
+const BIN_NAME = process.platform === "win32" ? "gtm-binary.exe" : "gtm-binary";
 const BIN_DIR = path.join(__dirname, "bin");
 
 const PLATFORM_MAP = {
@@ -68,6 +68,10 @@ async function install() {
 
     fs.mkdirSync(BIN_DIR, { recursive: true });
 
+    const EXTRACTED_NAME = isWindows ? "gtm.exe" : "gtm";
+    const extractedPath = path.join(BIN_DIR, EXTRACTED_NAME);
+    const finalPath = path.join(BIN_DIR, BIN_NAME);
+
     if (isWindows) {
       // Write zip and extract with PowerShell
       const zipPath = path.join(BIN_DIR, assetName);
@@ -83,8 +87,13 @@ async function install() {
       fs.writeFileSync(tarPath, data);
       execSync(`tar xzf "${tarPath}" -C "${BIN_DIR}"`, { stdio: "inherit" });
       fs.unlinkSync(tarPath);
-      fs.chmodSync(path.join(BIN_DIR, BIN_NAME), 0o755);
     }
+
+    // Rename extracted binary to avoid conflict with wrapper script
+    if (extractedPath !== finalPath) {
+      fs.renameSync(extractedPath, finalPath);
+    }
+    fs.chmodSync(finalPath, 0o755);
 
     console.log(`Installed gtm to ${path.join(BIN_DIR, BIN_NAME)}`);
   } catch (err) {

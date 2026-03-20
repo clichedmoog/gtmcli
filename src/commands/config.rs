@@ -80,8 +80,9 @@ pub async fn handle(
                     let containers_result = client
                         .get(&format!("accounts/{account_id}/containers"))
                         .await?;
-                    if let Some(containers) =
-                        containers_result.get("container").and_then(|c| c.as_array())
+                    if let Some(containers) = containers_result
+                        .get("container")
+                        .and_then(|c| c.as_array())
                     {
                         eprintln!("\nAvailable containers:");
                         for (i, c) in containers.iter().enumerate() {

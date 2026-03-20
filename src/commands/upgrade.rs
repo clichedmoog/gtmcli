@@ -71,9 +71,10 @@ async fn fetch_latest_release() -> Result<GitHubRelease> {
         });
     }
 
-    let release: GitHubRelease = resp.json().await.map_err(|e| {
-        GtmError::InvalidParams(format!("Failed to parse release info: {e}"))
-    })?;
+    let release: GitHubRelease = resp
+        .json()
+        .await
+        .map_err(|e| GtmError::InvalidParams(format!("Failed to parse release info: {e}")))?;
     Ok(release)
 }
 
@@ -129,9 +130,8 @@ pub async fn handle(args: UpgradeArgs) -> Result<()> {
         .await?;
 
     // Find current binary path
-    let current_exe = env::current_exe().map_err(|e| {
-        GtmError::InvalidParams(format!("Cannot determine binary path: {e}"))
-    })?;
+    let current_exe = env::current_exe()
+        .map_err(|e| GtmError::InvalidParams(format!("Cannot determine binary path: {e}")))?;
 
     let tmp_dir = env::temp_dir().join("gtm-upgrade");
     fs::create_dir_all(&tmp_dir)?;
@@ -153,7 +153,12 @@ pub async fn handle(args: UpgradeArgs) -> Result<()> {
             .map_err(|e| GtmError::InvalidParams(format!("Extract failed: {e}")))?;
     } else {
         Command::new("tar")
-            .args(["xzf", &archive_path.display().to_string(), "-C", &tmp_dir.display().to_string()])
+            .args([
+                "xzf",
+                &archive_path.display().to_string(),
+                "-C",
+                &tmp_dir.display().to_string(),
+            ])
             .status()
             .map_err(|e| GtmError::InvalidParams(format!("Extract failed: {e}")))?;
     }
@@ -163,15 +168,13 @@ pub async fn handle(args: UpgradeArgs) -> Result<()> {
     let new_bin = tmp_dir.join(bin_name);
 
     if !new_bin.exists() {
-        return Err(GtmError::InvalidParams(
-            "Extracted binary not found".into(),
-        ));
+        return Err(GtmError::InvalidParams("Extracted binary not found".into()));
     }
 
     // On Unix, replace by rename (atomic if same filesystem)
     // Back up current binary first
     let backup_path = current_exe.with_extension("old");
-    if let Err(_) = fs::rename(&current_exe, &backup_path) {
+    if fs::rename(&current_exe, &backup_path).is_err() {
         // If rename fails (cross-device), try copy
         fs::copy(&current_exe, &backup_path)?;
     }

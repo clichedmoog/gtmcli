@@ -130,7 +130,10 @@ pub async fn handle(
         }
         PermissionsAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete permission '{}'.", a.permission_id);
+                eprintln!(
+                    "WARNING: This will permanently delete permission '{}'.",
+                    a.permission_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

@@ -184,7 +184,10 @@ pub async fn handle(
         }
         VariablesAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete variable '{}'.", a.variable_id);
+                eprintln!(
+                    "WARNING: This will permanently delete variable '{}'.",
+                    a.variable_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

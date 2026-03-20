@@ -144,7 +144,10 @@ pub async fn handle(
         }
         VersionsAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete version '{}'.", a.v.version_id);
+                eprintln!(
+                    "WARNING: This will permanently delete version '{}'.",
+                    a.v.version_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

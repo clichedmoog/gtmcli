@@ -167,9 +167,7 @@ async fn main() {
                 Commands::Variables(args) => {
                     commands::variables::handle(args, &client, &format).await
                 }
-                Commands::Folders(args) => {
-                    commands::folders::handle(args, &client, &format).await
-                }
+                Commands::Folders(args) => commands::folders::handle(args, &client, &format).await,
                 Commands::Templates(args) => {
                     commands::templates::handle(args, &client, &format).await
                 }
@@ -185,9 +183,7 @@ async fn main() {
                 Commands::Permissions(args) => {
                     commands::permissions::handle(args, &client, &format).await
                 }
-                Commands::Clients(args) => {
-                    commands::clients::handle(args, &client, &format).await
-                }
+                Commands::Clients(args) => commands::clients::handle(args, &client, &format).await,
                 Commands::GtagConfigs(args) => {
                     commands::gtag_configs::handle(args, &client, &format).await
                 }

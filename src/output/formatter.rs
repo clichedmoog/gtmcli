@@ -58,10 +58,7 @@ fn print_compact(value: &Value) {
             .iter()
             .find_map(|k| item.get(k).and_then(|v| v.as_str()))
             .unwrap_or("-");
-        let name = item
-            .get("name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("-");
+        let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("-");
         println!("{id}\t{name}");
     };
 

@@ -41,7 +41,10 @@ pub async fn login(key_path: &Path, token_path: &Path) -> Result<TokenData> {
     let token_uri = key.token_uri.as_deref().unwrap_or(TOKEN_URI);
     let token = exchange_jwt(&jwt, token_uri).await?;
     token_store::save_token(token_path, &token)?;
-    eprintln!("Authentication successful (service account: {}).", key.client_email);
+    eprintln!(
+        "Authentication successful (service account: {}).",
+        key.client_email
+    );
     Ok(token)
 }
 

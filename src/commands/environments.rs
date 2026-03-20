@@ -154,7 +154,10 @@ pub async fn handle(
         }
         EnvironmentsAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete environment '{}'.", a.e.environment_id);
+                eprintln!(
+                    "WARNING: This will permanently delete environment '{}'.",
+                    a.e.environment_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

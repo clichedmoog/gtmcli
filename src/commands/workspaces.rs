@@ -204,7 +204,10 @@ pub async fn handle(
         }
         WorkspacesAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete workspace '{}'.", a.ws.workspace_id);
+                eprintln!(
+                    "WARNING: This will permanently delete workspace '{}'.",
+                    a.ws.workspace_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

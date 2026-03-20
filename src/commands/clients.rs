@@ -155,7 +155,10 @@ pub async fn handle(args: ClientsArgs, client: &GtmApiClient, format: &OutputFor
         }
         ClientsAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete client '{}'.", a.client_id);
+                eprintln!(
+                    "WARNING: This will permanently delete client '{}'.",
+                    a.client_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

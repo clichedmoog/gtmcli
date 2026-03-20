@@ -175,7 +175,10 @@ pub async fn handle(args: FoldersArgs, client: &GtmApiClient, format: &OutputFor
         }
         FoldersAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete folder '{}'.", a.folder_id);
+                eprintln!(
+                    "WARNING: This will permanently delete folder '{}'.",
+                    a.folder_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

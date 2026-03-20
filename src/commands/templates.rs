@@ -183,7 +183,10 @@ pub async fn handle(
         }
         TemplatesAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete template '{}'.", a.template_id);
+                eprintln!(
+                    "WARNING: This will permanently delete template '{}'.",
+                    a.template_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

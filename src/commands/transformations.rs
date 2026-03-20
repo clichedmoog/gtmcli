@@ -161,7 +161,10 @@ pub async fn handle(
         }
         TransformationsAction::Delete(a) => {
             if !a.force {
-                eprintln!("WARNING: This will permanently delete transformation '{}'.", a.transformation_id);
+                eprintln!(
+                    "WARNING: This will permanently delete transformation '{}'.",
+                    a.transformation_id
+                );
                 eprintln!("Run the same command with --force to confirm.");
                 return Ok(());
             }

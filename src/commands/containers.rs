@@ -27,6 +27,10 @@ pub enum ContainersAction {
     Snippet(ContainerIdArgs),
     /// Lookup container by public ID (GTM-XXXXX)
     Lookup(ContainerLookupArgs),
+    /// Combine (merge) two containers
+    Combine(ContainerCombineArgs),
+    /// Move a Tag ID to another container
+    MoveTagId(ContainerMoveTagIdArgs),
 }
 
 #[derive(Args)]
@@ -81,6 +85,43 @@ pub struct ContainerLookupArgs {
     /// Public container ID (e.g., GTM-XXXXX)
     #[arg(long)]
     pub public_id: String,
+}
+
+#[derive(Args)]
+pub struct ContainerCombineArgs {
+    #[arg(long, env = "GTM_ACCOUNT_ID")]
+    pub account_id: String,
+    #[arg(long, env = "GTM_CONTAINER_ID")]
+    pub container_id: String,
+    /// Allow user permission merging to resolve conflicts
+    #[arg(long)]
+    pub allow_user_permission_feature_update: bool,
+}
+
+#[derive(Args)]
+pub struct ContainerMoveTagIdArgs {
+    #[arg(long, env = "GTM_ACCOUNT_ID")]
+    pub account_id: String,
+    #[arg(long, env = "GTM_CONTAINER_ID")]
+    pub container_id: String,
+    /// Tag name for the destination container
+    #[arg(long)]
+    pub tag_name: Option<String>,
+    /// Tag ID to move
+    #[arg(long)]
+    pub tag_id: String,
+    /// Allow user permission merging to resolve conflicts
+    #[arg(long)]
+    pub allow_user_permission_feature_update: bool,
+    /// Copy tag to destination (instead of move)
+    #[arg(long)]
+    pub copy_tag: bool,
+    /// Copy users to destination container
+    #[arg(long)]
+    pub copy_users: bool,
+    /// Copy container settings to destination
+    #[arg(long)]
+    pub copy_settings: bool,
 }
 
 pub async fn handle(
@@ -141,6 +182,44 @@ pub async fn handle(
         ContainersAction::Lookup(a) => {
             let path = format!("accounts/containers:lookup?destinationId={}", a.public_id);
             let result = client.get(&path).await?;
+            print_resource(&result, format, "container");
+        }
+        ContainersAction::Combine(a) => {
+            let mut path = format!(
+                "accounts/{}/containers/{}:combine",
+                a.account_id, a.container_id
+            );
+            if a.allow_user_permission_feature_update {
+                path.push_str("?allowUserPermissionFeatureUpdate=true");
+            }
+            let result = client.post(&path, &json!({})).await?;
+            print_resource(&result, format, "container");
+        }
+        ContainersAction::MoveTagId(a) => {
+            let mut params = vec![];
+            if let Some(name) = &a.tag_name {
+                params.push(format!("tagName={name}"));
+            }
+            params.push(format!("tagId={}", a.tag_id));
+            if a.allow_user_permission_feature_update {
+                params.push("allowUserPermissionFeatureUpdate=true".to_string());
+            }
+            if a.copy_tag {
+                params.push("copyTag=true".to_string());
+            }
+            if a.copy_users {
+                params.push("copyUsers=true".to_string());
+            }
+            if a.copy_settings {
+                params.push("copySettings=true".to_string());
+            }
+            let path = format!(
+                "accounts/{}/containers/{}:move_tag_id?{}",
+                a.account_id,
+                a.container_id,
+                params.join("&")
+            );
+            let result = client.post(&path, &json!({})).await?;
             print_resource(&result, format, "container");
         }
     }

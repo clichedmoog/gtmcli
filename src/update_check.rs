@@ -21,7 +21,9 @@ fn current_version() -> &'static str {
 /// Check for updates in the background. Prints a message to stderr if a new version is available.
 /// This function never blocks the main program — errors are silently ignored.
 pub fn check_for_updates() {
-    tokio::spawn(async { let _ = check_and_notify().await; });
+    tokio::spawn(async {
+        let _ = check_and_notify().await;
+    });
 }
 
 async fn check_and_notify() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

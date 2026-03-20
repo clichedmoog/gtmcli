@@ -56,6 +56,8 @@ pub enum WorkspacesAction {
     Export(WorkspaceExportArgs),
     /// Import entities from a JSON export file
     Import(WorkspaceImportArgs),
+    /// Resolve merge conflict for a workspace entity
+    ResolveConflict(WorkspaceResolveConflictArgs),
 }
 
 #[derive(Args)]
@@ -151,6 +153,15 @@ pub struct WorkspaceImportArgs {
     /// Input file with exported workspace JSON
     #[arg(long, short)]
     input: String,
+}
+
+#[derive(Args)]
+pub struct WorkspaceResolveConflictArgs {
+    #[command(flatten)]
+    ws: WorkspaceFlags,
+    /// Entity to resolve as JSON (the workspace version to keep)
+    #[arg(long)]
+    entity: String,
 }
 
 pub async fn handle(
@@ -447,6 +458,16 @@ pub async fn handle(
             }
 
             eprintln!("Import complete.");
+        }
+        WorkspacesAction::ResolveConflict(a) => {
+            let path = format!(
+                "accounts/{}/containers/{}/workspaces/{}:resolve_conflict",
+                a.ws.account_id, a.ws.container_id, a.ws.workspace_id
+            );
+            let body: Value = serde_json::from_str(&a.entity)
+                .map_err(|_| crate::error::GtmError::InvalidParams(a.entity))?;
+            let result = client.post(&path, &body).await?;
+            print_resource(&result, format, "workspace");
         }
     }
     Ok(())

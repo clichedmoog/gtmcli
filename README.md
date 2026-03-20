@@ -106,8 +106,8 @@ Environment variables take precedence:
 | Resource | Commands | Scope |
 |----------|----------|-------|
 | `accounts` | list, get, update | Account |
-| `containers` | list, get, create, update, delete, snippet, lookup | Account |
-| `workspaces` | list, get, create, update, delete, status, sync, create-version, quick-preview, export, import | Container |
+| `containers` | list, get, create, update, delete, snippet, lookup, combine, move-tag-id | Account |
+| `workspaces` | list, get, create, update, delete, status, sync, create-version, quick-preview, resolve-conflict, export, import | Container |
 | `tags` | list, get, create, update, delete, revert | Workspace |
 | `triggers` | list, get, create, update, delete, revert | Workspace |
 | `variables` | list, get, create, update, delete, revert | Workspace |

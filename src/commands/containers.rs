@@ -66,7 +66,6 @@ pub struct ContainerUpdateArgs {
 }
 
 #[derive(Args)]
-#[derive(Args)]
 pub struct ContainerDeleteArgs {
     #[arg(long, env = "GTM_ACCOUNT_ID")]
     pub account_id: String,
@@ -77,6 +76,7 @@ pub struct ContainerDeleteArgs {
     pub force: bool,
 }
 
+#[derive(Args)]
 pub struct ContainerLookupArgs {
     /// Public container ID (e.g., GTM-XXXXX)
     #[arg(long)]

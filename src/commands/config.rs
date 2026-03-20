@@ -49,7 +49,7 @@ pub struct ConfigUnsetArgs {
 pub async fn handle(
     args: ConfigArgs,
     client: Option<&GtmApiClient>,
-    config: &Config,
+    _config: &Config,
     format: &OutputFormat,
 ) -> Result<()> {
     let config_path = Config::config_dir().join("config.json");

@@ -69,31 +69,32 @@ async function install() {
     fs.mkdirSync(BIN_DIR, { recursive: true });
 
     const EXTRACTED_NAME = isWindows ? "gtm.exe" : "gtm";
-    const extractedPath = path.join(BIN_DIR, EXTRACTED_NAME);
     const finalPath = path.join(BIN_DIR, BIN_NAME);
 
+    // Extract to a temp directory to avoid overwriting the wrapper script
+    const os = require("os");
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gtm-install-"));
+
     if (isWindows) {
-      // Write zip and extract with PowerShell
-      const zipPath = path.join(BIN_DIR, assetName);
+      const zipPath = path.join(tmpDir, assetName);
       fs.writeFileSync(zipPath, data);
       execSync(
-        `powershell -Command "Expand-Archive -Force '${zipPath}' '${BIN_DIR}'"`,
+        `powershell -Command "Expand-Archive -Force '${zipPath}' '${tmpDir}'"`,
         { stdio: "inherit" }
       );
-      fs.unlinkSync(zipPath);
     } else {
-      // Extract tar.gz
-      const tarPath = path.join(BIN_DIR, assetName);
+      const tarPath = path.join(tmpDir, assetName);
       fs.writeFileSync(tarPath, data);
-      execSync(`tar xzf "${tarPath}" -C "${BIN_DIR}"`, { stdio: "inherit" });
-      fs.unlinkSync(tarPath);
+      execSync(`tar xzf "${tarPath}" -C "${tmpDir}"`, { stdio: "inherit" });
     }
 
-    // Rename extracted binary to avoid conflict with wrapper script
-    if (extractedPath !== finalPath) {
-      fs.renameSync(extractedPath, finalPath);
-    }
+    // Copy extracted binary to final location
+    const extractedPath = path.join(tmpDir, EXTRACTED_NAME);
+    fs.copyFileSync(extractedPath, finalPath);
     fs.chmodSync(finalPath, 0o755);
+
+    // Cleanup temp dir
+    fs.rmSync(tmpDir, { recursive: true, force: true });
 
     console.log(`Installed gtm to ${path.join(BIN_DIR, BIN_NAME)}`);
   } catch (err) {

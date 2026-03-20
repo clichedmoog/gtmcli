@@ -94,6 +94,7 @@ async fn main() {
             .and_then(|s| match s {
                 "json" => Some(OutputFormat::Json),
                 "table" => Some(OutputFormat::Table),
+                "compact" => Some(OutputFormat::Compact),
                 _ => None,
             })
             .unwrap_or(OutputFormat::Json)

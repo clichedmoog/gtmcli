@@ -60,9 +60,9 @@ impl AppConfig {
                 VALID_KEYS.join(", ")
             )));
         }
-        if key == "outputFormat" && !["json", "table"].contains(&value.as_str()) {
+        if key == "outputFormat" && !["json", "table", "compact"].contains(&value.as_str()) {
             return Err(GtmError::InvalidParams(
-                "outputFormat must be 'json' or 'table'".into(),
+                "outputFormat must be 'json', 'table', or 'compact'".into(),
             ));
         }
         match key {

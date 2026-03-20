@@ -2,7 +2,7 @@ use reqwest::RequestBuilder;
 use serde_json::Value;
 
 use crate::auth;
-use crate::config::{Config, API_BASE};
+use crate::config::Config;
 use crate::error::{GtmError, Result};
 
 const MAX_RETRIES: u32 = 3;
@@ -12,24 +12,32 @@ pub struct GtmApiClient {
     http: reqwest::Client,
     config: Config,
     dry_run: bool,
+    api_base: String,
 }
 
 impl GtmApiClient {
     pub fn new(config: Config, dry_run: bool) -> Self {
+        let api_base =
+            std::env::var("GTM_API_BASE").unwrap_or_else(|_| crate::config::API_BASE.to_string());
         Self {
             http: reqwest::Client::new(),
             config,
             dry_run,
+            api_base,
         }
     }
 
     async fn auth_header(&self) -> Result<String> {
+        // Skip real auth when using a custom API base (e.g., mock server in tests)
+        if std::env::var("GTM_API_BASE").is_ok() {
+            return Ok("Bearer test-token".to_string());
+        }
         let token = auth::ensure_valid_token(&self.config).await?;
         Ok(format!("Bearer {token}"))
     }
 
     pub async fn get(&self, path: &str) -> Result<Value> {
-        let url = format!("{API_BASE}/{path}");
+        let url = format!("{}/{path}", self.api_base);
         let auth = self.auth_header().await?;
         self.send_with_retry(|| self.http.get(&url).header("Authorization", &auth))
             .await
@@ -43,7 +51,7 @@ impl GtmApiClient {
         let mut page_token: Option<String> = None;
 
         loop {
-            let mut url = format!("{API_BASE}/{path}");
+            let mut url = format!("{}/{path}", self.api_base);
             if let Some(ref token) = page_token {
                 let sep = if url.contains('?') { '&' } else { '?' };
                 url = format!("{url}{sep}pageToken={token}");
@@ -106,7 +114,7 @@ impl GtmApiClient {
             self.print_dry_run("POST", path, Some(body));
             return Ok(body.clone());
         }
-        let url = format!("{API_BASE}/{path}");
+        let url = format!("{}/{path}", self.api_base);
         let auth = self.auth_header().await?;
         let body = body.clone();
         self.send_with_retry(|| {
@@ -129,7 +137,7 @@ impl GtmApiClient {
             self.print_dry_run("POST", path, Some(body));
             return Ok(body.clone());
         }
-        let url = format!("{API_BASE}/{path}");
+        let url = format!("{}/{path}", self.api_base);
         let auth = self.auth_header().await?;
         let body = body.clone();
         let query: Vec<(String, String)> = query
@@ -151,7 +159,7 @@ impl GtmApiClient {
             self.print_dry_run("PUT", path, Some(body));
             return Ok(body.clone());
         }
-        let url = format!("{API_BASE}/{path}");
+        let url = format!("{}/{path}", self.api_base);
         let auth = self.auth_header().await?;
         let body = body.clone();
         self.send_with_retry(|| {
@@ -169,7 +177,7 @@ impl GtmApiClient {
             self.print_dry_run("DELETE", path, None);
             return Ok(());
         }
-        let url = format!("{API_BASE}/{path}");
+        let url = format!("{}/{path}", self.api_base);
         let auth = self.auth_header().await?;
         let query: Vec<(String, String)> = query
             .iter()
@@ -189,14 +197,14 @@ impl GtmApiClient {
             self.print_dry_run("DELETE", path, None);
             return Ok(());
         }
-        let url = format!("{API_BASE}/{path}");
+        let url = format!("{}/{path}", self.api_base);
         let auth = self.auth_header().await?;
         self.send_delete_with_retry(|| self.http.delete(&url).header("Authorization", &auth))
             .await
     }
 
     fn print_dry_run(&self, method: &str, path: &str, body: Option<&Value>) {
-        eprintln!("[dry-run] {method} {API_BASE}/{path}");
+        eprintln!("[dry-run] {method} {}/{path}", self.api_base);
         if let Some(b) = body {
             if let Ok(pretty) = serde_json::to_string_pretty(b) {
                 eprintln!("[dry-run] Body: {pretty}");

@@ -1,6 +1,6 @@
 {
   "name": "gtmcli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Google Tag Manager CLI — built for humans and AI agents",
   "bin": {
     "gtm": "bin/gtm"
@@ -10,7 +10,8 @@
   },
   "files": [
     "bin/",
-    "install.js"
+    "install.js",
+    "README.md"
   ],
   "repository": {
     "type": "git",
@@ -21,7 +22,12 @@
     "gtm",
     "cli",
     "tag-manager",
-    "analytics"
+    "analytics",
+    "gtm-api",
+    "google-analytics",
+    "ga4",
+    "automation",
+    "ai-agent"
   ],
   "author": "clichedmoog",
   "license": "MIT",

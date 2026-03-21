@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Run cargo fmt and fail if there are unformatted files
+if ! cargo fmt -- --check 2>/dev/null; then
+    echo "pre-commit: running cargo fmt..."
+    cargo fmt
+    echo "pre-commit: formatted. staged files updated."
+    # Re-stage any formatted files
+    git diff --name-only | xargs -r git add
+fi

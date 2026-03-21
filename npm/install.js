@@ -6,7 +6,7 @@ const path = require("path");
 const https = require("https");
 const { createGunzip } = require("zlib");
 
-const REPO = "clichedmoog/gtmcli";
+const REPO = "clichedmoog/gtm-cli";
 const BIN_NAME = process.platform === "win32" ? "gtm-binary.exe" : "gtm-binary";
 const BIN_DIR = path.join(__dirname, "bin");
 

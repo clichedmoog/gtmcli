@@ -45,19 +45,19 @@ npm install -g gtmcli
 ### Quick Install (macOS)
 
 ```bash
-curl -fsSL https://github.com/clichedmoog/gtmcli/releases/latest/download/gtm-$(uname -m | sed 's/arm64/aarch64/')-apple-darwin.tar.gz | tar xz -C /usr/local/bin
+curl -fsSL https://github.com/clichedmoog/gtm-cli/releases/latest/download/gtm-$(uname -m | sed 's/arm64/aarch64/')-apple-darwin.tar.gz | tar xz -C /usr/local/bin
 ```
 
 ### Quick Install (Linux)
 
 ```bash
-curl -fsSL https://github.com/clichedmoog/gtmcli/releases/latest/download/gtm-$(uname -m)-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin
+curl -fsSL https://github.com/clichedmoog/gtm-cli/releases/latest/download/gtm-$(uname -m)-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/clichedmoog/gtmcli.git
+git clone https://github.com/clichedmoog/gtm-cli.git
 cd gtmcli
 cargo install --path .
 ```

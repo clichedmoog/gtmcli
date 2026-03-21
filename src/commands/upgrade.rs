@@ -6,7 +6,7 @@ use std::process::Command;
 
 use crate::error::{GtmError, Result};
 
-const REPO: &str = "clichedmoog/gtmcli";
+const REPO: &str = "clichedmoog/gtm-cli";
 
 #[derive(Args)]
 pub struct UpgradeArgs {

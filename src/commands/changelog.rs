@@ -83,9 +83,7 @@ pub async fn handle(
         ChangelogStyle::Diff => {
             render_diff(&changes, from_id, to_id, added, removed, modified, format)
         }
-        ChangelogStyle::Note => {
-            render_note(&changes, to_id, added, removed, modified, format)
-        }
+        ChangelogStyle::Note => render_note(&changes, to_id, added, removed, modified, format),
     }
 
     Ok(())
@@ -239,8 +237,14 @@ fn render_note(
 
 fn build_title(to_id: &str, changes: &[Change]) -> String {
     let added = changes.iter().filter(|c| c.change_type == "added").count();
-    let removed = changes.iter().filter(|c| c.change_type == "removed").count();
-    let modified = changes.iter().filter(|c| c.change_type == "modified").count();
+    let removed = changes
+        .iter()
+        .filter(|c| c.change_type == "removed")
+        .count();
+    let modified = changes
+        .iter()
+        .filter(|c| c.change_type == "modified")
+        .count();
 
     if added == 0 && removed == 0 && modified == 0 {
         return format!("v{to_id}: no changes");
@@ -248,14 +252,22 @@ fn build_title(to_id: &str, changes: &[Change]) -> String {
 
     // Build human-readable parts like "3 tags added", "1 trigger modified"
     let mut parts = Vec::new();
-    for (change_type, verb) in &[("added", "added"), ("modified", "modified"), ("removed", "removed")] {
+    for (change_type, verb) in &[
+        ("added", "added"),
+        ("modified", "modified"),
+        ("removed", "removed"),
+    ] {
         for rtype in &["tag", "trigger", "variable"] {
             let n = changes
                 .iter()
                 .filter(|c| c.change_type == *change_type && c.resource_type == *rtype)
                 .count();
             if n > 0 {
-                let label = if n == 1 { rtype.to_string() } else { format!("{rtype}s") };
+                let label = if n == 1 {
+                    rtype.to_string()
+                } else {
+                    format!("{rtype}s")
+                };
                 parts.push(format!("{n} {label} {verb}"));
             }
         }
@@ -275,7 +287,10 @@ fn build_title(to_id: &str, changes: &[Change]) -> String {
 fn build_description(changes: &[Change]) -> String {
     let mut sections = Vec::new();
 
-    let added: Vec<_> = changes.iter().filter(|c| c.change_type == "added").collect();
+    let added: Vec<_> = changes
+        .iter()
+        .filter(|c| c.change_type == "added")
+        .collect();
     let modified: Vec<_> = changes
         .iter()
         .filter(|c| c.change_type == "modified")

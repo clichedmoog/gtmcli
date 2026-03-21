@@ -70,7 +70,7 @@ gtm versions publish --version-id 1
 
 ## How It Works
 
-This npm package downloads the platform-specific binary from [GitHub Releases](https://github.com/clichedmoog/gtmcli/releases) during `postinstall`. Supported platforms:
+This npm package downloads the platform-specific binary from [GitHub Releases](https://github.com/clichedmoog/gtm-cli/releases) during `postinstall`. Supported platforms:
 
 - macOS (Apple Silicon, Intel)
 - Linux (x86_64, ARM64)
@@ -78,7 +78,7 @@ This npm package downloads the platform-specific binary from [GitHub Releases](h
 
 ## Documentation
 
-Full documentation and source code: [github.com/clichedmoog/gtmcli](https://github.com/clichedmoog/gtmcli)
+Full documentation and source code: [github.com/clichedmoog/gtm-cli](https://github.com/clichedmoog/gtm-cli)
 
 ## License
 

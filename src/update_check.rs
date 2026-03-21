@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-const REPO: &str = "clichedmoog/gtmcli";
+const REPO: &str = "clichedmoog/gtm-cli";
 const CHECK_INTERVAL_SECS: i64 = 86400; // 24 hours
 
 #[derive(Serialize, Deserialize, Default)]

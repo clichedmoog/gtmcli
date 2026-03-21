@@ -2042,7 +2042,9 @@ async fn test_mock_validate_clean() {
 
     // Trigger referenced by the tag
     Mock::given(method("GET"))
-        .and(path("/accounts/123456/containers/789/workspaces/1/triggers"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/triggers",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "trigger": [{
                 "triggerId": "2",
@@ -2055,7 +2057,9 @@ async fn test_mock_validate_clean() {
 
     // Variable referenced in tag
     Mock::given(method("GET"))
-        .and(path("/accounts/123456/containers/789/workspaces/1/variables"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/variables",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "variable": [{
                 "variableId": "3",
@@ -2087,8 +2091,10 @@ async fn test_mock_validate_clean() {
     let assert = gtm_with_server(&server)
         .args([
             "validate",
-            "--account-id", "123456",
-            "--container-id", "789",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
         ])
         .assert()
         .success();
@@ -2132,7 +2138,9 @@ async fn test_mock_validate_issues_found() {
 
     // Trigger not referenced by any tag (warning: unused-trigger)
     Mock::given(method("GET"))
-        .and(path("/accounts/123456/containers/789/workspaces/1/triggers"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/triggers",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "trigger": [
                 {"triggerId": "10", "name": "All Pages", "type": "pageview"},
@@ -2143,7 +2151,9 @@ async fn test_mock_validate_issues_found() {
         .await;
 
     Mock::given(method("GET"))
-        .and(path("/accounts/123456/containers/789/workspaces/1/variables"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/variables",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "variable": []
         })))
@@ -2163,8 +2173,10 @@ async fn test_mock_validate_issues_found() {
     let assert = gtm_with_server(&server)
         .args([
             "validate",
-            "--account-id", "123456",
-            "--container-id", "789",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
         ])
         .assert();
     // We can't easily check exit code 1 from process::exit in assert_cmd,
@@ -2197,7 +2209,9 @@ async fn test_mock_validate_table_format() {
         .await;
 
     Mock::given(method("GET"))
-        .and(path("/accounts/123456/containers/789/workspaces/1/triggers"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/triggers",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "trigger": [{"triggerId": "2", "name": "All Pages", "type": "pageview"}]
         })))
@@ -2205,7 +2219,9 @@ async fn test_mock_validate_table_format() {
         .await;
 
     Mock::given(method("GET"))
-        .and(path("/accounts/123456/containers/789/workspaces/1/variables"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/variables",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "variable": []
         })))
@@ -2223,8 +2239,10 @@ async fn test_mock_validate_table_format() {
     gtm_table_with_server(&server)
         .args([
             "validate",
-            "--account-id", "123456",
-            "--container-id", "789",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
         ])
         .assert()
         .success()
@@ -2272,10 +2290,14 @@ async fn test_mock_changelog_with_changes() {
     let assert = gtm_with_server(&server)
         .args([
             "changelog",
-            "--account-id", "123456",
-            "--container-id", "789",
-            "--from", "1",
-            "--to", "2",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+            "--from",
+            "1",
+            "--to",
+            "2",
         ])
         .assert()
         .success();
@@ -2288,11 +2310,17 @@ async fn test_mock_changelog_with_changes() {
     assert_eq!(json["summary"]["modified"], 1); // tag 2
 
     let changes = json["changes"].as_array().unwrap();
-    let added: Vec<_> = changes.iter().filter(|c| c["changeType"] == "added").collect();
+    let added: Vec<_> = changes
+        .iter()
+        .filter(|c| c["changeType"] == "added")
+        .collect();
     assert_eq!(added.len(), 1);
     assert_eq!(added[0]["name"], "New GA4 Tag");
 
-    let modified: Vec<_> = changes.iter().filter(|c| c["changeType"] == "modified").collect();
+    let modified: Vec<_> = changes
+        .iter()
+        .filter(|c| c["changeType"] == "modified")
+        .collect();
     assert_eq!(modified.len(), 1);
     assert!(modified[0]["details"].as_str().unwrap().contains("name:"));
 }
@@ -2330,9 +2358,12 @@ async fn test_mock_changelog_to_live() {
     let assert = gtm_with_server(&server)
         .args([
             "changelog",
-            "--account-id", "123456",
-            "--container-id", "789",
-            "--from", "1",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+            "--from",
+            "1",
         ])
         .assert()
         .success();
@@ -2369,10 +2400,14 @@ async fn test_mock_changelog_no_changes() {
     let assert = gtm_with_server(&server)
         .args([
             "changelog",
-            "--account-id", "123456",
-            "--container-id", "789",
-            "--from", "1",
-            "--to", "2",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+            "--from",
+            "1",
+            "--to",
+            "2",
         ])
         .assert()
         .success();
@@ -2412,10 +2447,14 @@ async fn test_mock_changelog_table_format() {
     gtm_table_with_server(&server)
         .args([
             "changelog",
-            "--account-id", "123456",
-            "--container-id", "789",
-            "--from", "1",
-            "--to", "2",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+            "--from",
+            "1",
+            "--to",
+            "2",
         ])
         .assert()
         .success()
@@ -2460,11 +2499,16 @@ async fn test_mock_changelog_style_note_json() {
     let assert = gtm_with_server(&server)
         .args([
             "changelog",
-            "--account-id", "123456",
-            "--container-id", "789",
-            "--from", "1",
-            "--to", "2",
-            "--style", "note",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+            "--from",
+            "1",
+            "--to",
+            "2",
+            "--style",
+            "note",
         ])
         .assert()
         .success();
@@ -2520,11 +2564,16 @@ async fn test_mock_changelog_style_note_table() {
     gtm_table_with_server(&server)
         .args([
             "changelog",
-            "--account-id", "123456",
-            "--container-id", "789",
-            "--from", "1",
-            "--to", "2",
-            "--style", "note",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+            "--from",
+            "1",
+            "--to",
+            "2",
+            "--style",
+            "note",
         ])
         .assert()
         .success()

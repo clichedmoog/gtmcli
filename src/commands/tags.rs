@@ -2,7 +2,7 @@ use clap::{Args, Subcommand};
 use serde_json::json;
 
 use crate::api::client::GtmApiClient;
-use crate::api::params::params_from_json;
+use crate::api::params::{params_from_json, transform_event_params};
 use crate::api::workspace::resolve_workspace;
 use crate::error::{GtmError, Result};
 use crate::output::formatter::{print_resource, OutputFormat};
@@ -146,7 +146,10 @@ pub async fn handle(args: TagsArgs, client: &GtmApiClient, format: &OutputFormat
         }
         TagsAction::Create(a) => {
             let base = workspace_path(&a.ws, client).await?;
-            let raw_params = parse_params(&a.params)?;
+            let mut raw_params = parse_params(&a.params)?;
+            if a.tag_type == "gaawe" {
+                transform_event_params(&mut raw_params);
+            }
             let parameters = params_from_json(&raw_params);
 
             let mut body = json!({
@@ -173,7 +176,11 @@ pub async fn handle(args: TagsArgs, client: &GtmApiClient, format: &OutputFormat
                 body["name"] = json!(name);
             }
             if a.params.is_some() {
-                let raw = parse_params(&a.params)?;
+                let mut raw = parse_params(&a.params)?;
+                let tag_type = body.get("type").and_then(|v| v.as_str()).unwrap_or("");
+                if tag_type == "gaawe" {
+                    transform_event_params(&mut raw);
+                }
                 body["parameter"] = json!(params_from_json(&raw));
             }
             if !a.firing_trigger_id.is_empty() {

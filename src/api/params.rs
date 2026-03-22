@@ -81,6 +81,34 @@ pub fn params_from_json(params: &Value) -> Vec<GtmParameter> {
     }
 }
 
+/// Transform `eventParameters` in a JSON params object to the `eventSettingsTable`
+/// format that the GTM API expects for gaawe (GA4 Event) tags.
+///
+/// Input:  `{"eventParameters": [{"name": "foo", "value": "bar"}]}`
+/// Output: `{"eventSettingsTable": [{"parameter": "foo", "parameterValue": "bar"}]}`
+pub fn transform_event_params(params: &mut Value) {
+    if let Some(obj) = params.as_object_mut() {
+        if let Some(event_params) = obj.remove("eventParameters") {
+            if let Some(arr) = event_params.as_array() {
+                let rows: Vec<Value> = arr
+                    .iter()
+                    .filter_map(|item| {
+                        let name = item.get("name")?.as_str()?;
+                        let value = item.get("value")?.as_str()?;
+                        Some(serde_json::json!({
+                            "parameter": name,
+                            "parameterValue": value,
+                        }))
+                    })
+                    .collect();
+                if !rows.is_empty() {
+                    obj.insert("eventSettingsTable".to_string(), Value::Array(rows));
+                }
+            }
+        }
+    }
+}
+
 /// Get the correct parameter key for a variable based on its type.
 /// Mirrors gtm-client.ts variable type mapping.
 pub fn get_variable_parameter_key(variable_type: &str) -> &'static str {
@@ -247,5 +275,72 @@ mod tests {
         assert!(json["list"].is_array());
         // key: None should be omitted
         assert!(json["list"][0].get("key").is_none());
+    }
+
+    #[test]
+    fn test_transform_event_params() {
+        let mut params = json!({
+            "measurementIdOverride": "G-XXX",
+            "eventName": "room_create",
+            "eventParameters": [
+                {"name": "deck_type", "value": "{{dlv - deck_type}}"},
+                {"name": "has_topic", "value": "{{dlv - has_topic}}"}
+            ]
+        });
+        transform_event_params(&mut params);
+
+        // eventParameters should be removed
+        assert!(params.get("eventParameters").is_none());
+        // eventSettingsTable should be created
+        let table = params["eventSettingsTable"].as_array().unwrap();
+        assert_eq!(table.len(), 2);
+        assert_eq!(table[0]["parameter"], "deck_type");
+        assert_eq!(table[0]["parameterValue"], "{{dlv - deck_type}}");
+        assert_eq!(table[1]["parameter"], "has_topic");
+        assert_eq!(table[1]["parameterValue"], "{{dlv - has_topic}}");
+        // Other params should be untouched
+        assert_eq!(params["measurementIdOverride"], "G-XXX");
+        assert_eq!(params["eventName"], "room_create");
+    }
+
+    #[test]
+    fn test_transform_event_params_no_event_parameters() {
+        let mut params = json!({"eventName": "scroll"});
+        transform_event_params(&mut params);
+        // Should be unchanged
+        assert_eq!(params, json!({"eventName": "scroll"}));
+    }
+
+    #[test]
+    fn test_transform_event_params_end_to_end() {
+        let mut params = json!({
+            "measurementIdOverride": "G-XXX",
+            "eventName": "room_create",
+            "eventParameters": [
+                {"name": "deck_type", "value": "{{dlv - deck_type}}"}
+            ]
+        });
+        transform_event_params(&mut params);
+        let parameters = params_from_json(&params);
+
+        // Should produce correct GTM wire format
+        let json_params = serde_json::to_value(&parameters).unwrap();
+        let arr = json_params.as_array().unwrap();
+
+        // Find eventSettingsTable parameter
+        let est = arr
+            .iter()
+            .find(|p| p["key"] == "eventSettingsTable")
+            .expect("should have eventSettingsTable");
+        assert_eq!(est["type"], "list");
+
+        let list = est["list"].as_array().unwrap();
+        assert_eq!(list[0]["type"], "map");
+
+        let map = list[0]["map"].as_array().unwrap();
+        let param_key = map.iter().find(|m| m["key"] == "parameter").unwrap();
+        assert_eq!(param_key["value"], "deck_type");
+        let param_val = map.iter().find(|m| m["key"] == "parameterValue").unwrap();
+        assert_eq!(param_val["value"], "{{dlv - deck_type}}");
     }
 }

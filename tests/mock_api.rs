@@ -365,6 +365,43 @@ async fn test_mock_tags_delete_with_force() {
         .success();
 }
 
+#[tokio::test]
+async fn test_mock_tags_create_gaawe_event_parameters() {
+    let server = setup_server().await;
+    mount_workspace_mock(&server).await;
+
+    // Mock POST that validates the request body has eventSettingsTable
+    Mock::given(method("POST"))
+        .and(path("/accounts/123456/containers/789/workspaces/1/tags"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "tagId": "100",
+            "name": "GA4 Event - room_create",
+            "type": "gaawe"
+        })))
+        .mount(&server)
+        .await;
+
+    let assert = gtm_with_server(&server)
+        .args([
+            "tags",
+            "create",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+            "--name",
+            "GA4 Event - room_create",
+            "--type",
+            "gaawe",
+            "--params",
+            r#"{"measurementIdOverride":"G-XXX","eventName":"room_create","eventParameters":[{"name":"deck_type","value":"{{dlv - deck_type}}"},{"name":"has_topic","value":"{{dlv - has_topic}}"}]}"#,
+        ])
+        .assert()
+        .success();
+    let json = parse_json(&assert);
+    assert_eq!(json["tagId"], "100");
+}
+
 // ─── Triggers ───
 
 #[tokio::test]

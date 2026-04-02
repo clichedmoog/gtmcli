@@ -43,22 +43,42 @@ pub async fn handle(
         args.account_id, args.container_id, ws_id
     );
 
-    // Fetch all resources concurrently
+    // Fetch container info to determine type (web vs server)
+    let container_path = format!(
+        "accounts/{}/containers/{}",
+        args.account_id, args.container_id
+    );
+    let container_res = client.get(&container_path).await?;
+    let is_server = container_res
+        .get("usageContext")
+        .and_then(|v| v.as_array())
+        .is_some_and(|arr| arr.iter().any(|v| v.as_str() == Some("server")));
+
+    // Fetch all resources concurrently (include clients for server containers)
     let tags_path = format!("{base}/tags");
     let triggers_path = format!("{base}/triggers");
     let variables_path = format!("{base}/variables");
     let folders_path = format!("{base}/folders");
-    let (tags_res, triggers_res, variables_res, folders_res) = tokio::join!(
+    let clients_path = format!("{base}/clients");
+    let (tags_res, triggers_res, variables_res, folders_res, clients_res) = tokio::join!(
         client.get_all(&tags_path),
         client.get_all(&triggers_path),
         client.get_all(&variables_path),
         client.get_all(&folders_path),
+        async {
+            if is_server {
+                client.get_all(&clients_path).await
+            } else {
+                Ok(serde_json::json!({}))
+            }
+        },
     );
 
     let tags = extract_array(&tags_res?, "tag");
     let triggers = extract_array(&triggers_res?, "trigger");
     let variables = extract_array(&variables_res?, "variable");
     let folders = extract_array(&folders_res?, "folder");
+    let clients = extract_array(&clients_res?, "client");
 
     let mut issues = Vec::new();
 
@@ -164,6 +184,81 @@ pub async fn handle(
                     resource_name: name.clone(),
                     message: format!("Duplicate tag name ({}x)", ids.len()),
                 });
+            }
+        }
+    }
+
+    // Server-side container rules
+    if is_server {
+        // Rule 6: no-client — server container has no clients (can't receive requests)
+        if clients.is_empty() {
+            issues.push(Issue {
+                severity: "error",
+                rule: "no-client",
+                resource_type: "container",
+                resource_id: args.container_id.clone(),
+                resource_name: "-".into(),
+                message: "Server container has no clients — cannot receive requests".into(),
+            });
+        }
+
+        // Rule 7: tag-client-mismatch — tags that need a specific client type
+        // Known mappings: GA4 tags need a GA4 client
+        let client_types: HashSet<String> = clients
+            .iter()
+            .map(|c| get_str(c, "type").to_lowercase())
+            .collect();
+        let has_ga4_client = client_types
+            .iter()
+            .any(|t| t.contains("ga4") || t.contains("google_analytics"));
+
+        let ga4_tag_types = ["gaawc", "gaawe"];
+        let has_ga4_tags = tags.iter().any(|tag| {
+            let t = get_str(tag, "type");
+            ga4_tag_types.contains(&t.as_str())
+        });
+        if has_ga4_tags && !has_ga4_client {
+            issues.push(Issue {
+                severity: "warning",
+                rule: "tag-client-mismatch",
+                resource_type: "container",
+                resource_id: args.container_id.clone(),
+                resource_name: "-".into(),
+                message: "GA4 tags found but no GA4 client configured — events won't be received"
+                    .into(),
+            });
+        }
+
+        // Rule 8: unused-client — clients not used by any tag
+        // Server-side tags reference clients implicitly via event matching,
+        // but having a client with no corresponding tags is suspicious
+        if !clients.is_empty() && !tags.is_empty() {
+            let tag_types: HashSet<String> = tags
+                .iter()
+                .map(|t| get_str(t, "type").to_lowercase())
+                .collect();
+            for cl in &clients {
+                let client_type = get_str(cl, "type").to_lowercase();
+                // GA4 client needs GA4 tags
+                let has_matching_tags = if client_type.contains("ga4") {
+                    tag_types
+                        .iter()
+                        .any(|t| ga4_tag_types.contains(&t.as_str()))
+                } else {
+                    // For other client types, we can't reliably determine matching
+                    true
+                };
+                if !has_matching_tags {
+                    issues.push(Issue {
+                        severity: "warning",
+                        rule: "unused-client",
+                        resource_type: "client",
+                        resource_id: get_str(cl, "clientId"),
+                        resource_name: get_str(cl, "name"),
+                        message: "Client has no matching tags — may not be processing any events"
+                            .into(),
+                    });
+                }
             }
         }
     }

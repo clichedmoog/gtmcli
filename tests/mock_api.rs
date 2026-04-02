@@ -2062,6 +2062,16 @@ async fn test_mock_validate_clean() {
     let server = setup_server().await;
     mount_workspace_mock(&server).await;
 
+    // Container info (web container)
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "containerId": "789",
+            "usageContext": ["web"]
+        })))
+        .mount(&server)
+        .await;
+
     // Tags with firing triggers
     Mock::given(method("GET"))
         .and(path("/accounts/123456/containers/789/workspaces/1/tags"))
@@ -2144,6 +2154,16 @@ async fn test_mock_validate_clean() {
 async fn test_mock_validate_issues_found() {
     let server = setup_server().await;
     mount_workspace_mock(&server).await;
+
+    // Container info (web container)
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "containerId": "789",
+            "usageContext": ["web"]
+        })))
+        .mount(&server)
+        .await;
 
     // Tag with no firing triggers (error: no-firing-trigger)
     // Two tags with same name (warning: duplicate-tag-name)
@@ -2237,6 +2257,16 @@ async fn test_mock_validate_table_format() {
     let server = setup_server().await;
     mount_workspace_mock(&server).await;
 
+    // Container info (web container)
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "containerId": "789",
+            "usageContext": ["web"]
+        })))
+        .mount(&server)
+        .await;
+
     Mock::given(method("GET"))
         .and(path("/accounts/123456/containers/789/workspaces/1/tags"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
@@ -2284,6 +2314,178 @@ async fn test_mock_validate_table_format() {
         .assert()
         .success()
         .stdout(predicate::str::contains("No issues found."));
+}
+
+// ─── Server-side Validate ───
+
+#[tokio::test]
+async fn test_mock_validate_server_no_client() {
+    let server = setup_server().await;
+    mount_workspace_mock(&server).await;
+
+    // Container info (server container)
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "containerId": "789",
+            "usageContext": ["server"]
+        })))
+        .mount(&server)
+        .await;
+
+    // Tags with firing triggers
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789/workspaces/1/tags"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "tag": [{
+                "tagId": "1",
+                "name": "GA4 Tag",
+                "type": "gaawc",
+                "firingTriggerId": ["2"]
+            }]
+        })))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/triggers",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "trigger": [{"triggerId": "2", "name": "All Pages", "type": "pageview"}]
+        })))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/variables",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "variable": []
+        })))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789/workspaces/1/folders"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "folder": []
+        })))
+        .mount(&server)
+        .await;
+
+    // Empty clients list
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789/workspaces/1/clients"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "client": []
+        })))
+        .mount(&server)
+        .await;
+
+    let assert = gtm_with_server(&server)
+        .args([
+            "validate",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+        ])
+        .assert();
+    let stdout = String::from_utf8_lossy(&assert.get_output().stdout);
+    let json: Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let issues = json["issues"].as_array().unwrap();
+    let rules: Vec<&str> = issues.iter().filter_map(|i| i["rule"].as_str()).collect();
+    assert!(rules.contains(&"no-client"), "should detect no-client");
+    assert!(
+        rules.contains(&"tag-client-mismatch"),
+        "should detect GA4 tag without GA4 client"
+    );
+    assert!(json["summary"]["errors"].as_u64().unwrap() >= 1);
+}
+
+#[tokio::test]
+async fn test_mock_validate_server_healthy() {
+    let server = setup_server().await;
+    mount_workspace_mock(&server).await;
+
+    // Container info (server container)
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "containerId": "789",
+            "usageContext": ["server"]
+        })))
+        .mount(&server)
+        .await;
+
+    // GA4 tag
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789/workspaces/1/tags"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "tag": [{
+                "tagId": "1",
+                "name": "GA4 Tag",
+                "type": "gaawe",
+                "firingTriggerId": ["2"]
+            }]
+        })))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/triggers",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "trigger": [{"triggerId": "2", "name": "All Events", "type": "customEvent"}]
+        })))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/accounts/123456/containers/789/workspaces/1/variables",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "variable": []
+        })))
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789/workspaces/1/folders"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "folder": []
+        })))
+        .mount(&server)
+        .await;
+
+    // GA4 client present
+    Mock::given(method("GET"))
+        .and(path("/accounts/123456/containers/789/workspaces/1/clients"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "client": [{
+                "clientId": "1",
+                "name": "GA4 Client",
+                "type": "__ga4"
+            }]
+        })))
+        .mount(&server)
+        .await;
+
+    gtm_with_server(&server)
+        .args([
+            "validate",
+            "--account-id",
+            "123456",
+            "--container-id",
+            "789",
+        ])
+        .assert()
+        .success();
 }
 
 // ─── Changelog ───

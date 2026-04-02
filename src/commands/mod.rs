@@ -10,6 +10,7 @@ pub mod containers;
 pub mod destinations;
 pub mod doctor;
 pub mod environments;
+pub mod explain;
 pub mod folders;
 pub mod gtag_configs;
 pub mod permissions;

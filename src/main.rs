@@ -98,6 +98,8 @@ enum Commands {
     Destinations(commands::destinations::DestinationsArgs),
     /// Quick setup workflows (GA4, Facebook Pixel, etc.)
     Setup(commands::setup::SetupArgs),
+    /// Explain a tag's triggers, variables, and parameters
+    Explain(commands::explain::ExplainArgs),
     /// Validate workspace resources for common issues
     Validate(commands::validate::ValidateArgs),
     /// Compare two container versions and show changes
@@ -227,6 +229,7 @@ async fn main() {
                     commands::destinations::handle(args, &client, &format).await
                 }
                 Commands::Setup(args) => commands::setup::handle(args, &client, &format).await,
+                Commands::Explain(args) => commands::explain::handle(args, &client, &format).await,
                 Commands::Validate(args) => {
                     commands::validate::handle(args, &client, &format).await
                 }

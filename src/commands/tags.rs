@@ -159,6 +159,24 @@ fn resolve_params(
     }
 }
 
+/// Top-level Tag fields that should NOT go through params_from_json().
+/// These are set directly on the API body instead of inside parameter[].
+const TAG_TOP_LEVEL_FIELDS: &[&str] = &["consentSettings", "monitoringMetadata", "tagFiringOption"];
+
+/// Extract top-level tag fields from raw params JSON.
+/// Returns (remaining params for parameter[], extracted top-level fields).
+fn extract_top_level_fields(raw: &mut serde_json::Value) -> Vec<(String, serde_json::Value)> {
+    let mut extracted = Vec::new();
+    if let Some(obj) = raw.as_object_mut() {
+        for &field in TAG_TOP_LEVEL_FIELDS {
+            if let Some(val) = obj.remove(field) {
+                extracted.push((field.to_string(), val));
+            }
+        }
+    }
+    extracted
+}
+
 fn read_stdin() -> Result<String> {
     use std::io::Read;
     let mut buf = String::new();
@@ -219,6 +237,7 @@ pub async fn handle(args: TagsArgs, client: &GtmApiClient, format: &OutputFormat
             } else {
                 resolve_params(&a.params, &a.params_file)?
             };
+            let top_level = extract_top_level_fields(&mut raw_params);
             if a.tag_type == "gaawe" {
                 transform_event_params(&mut raw_params);
             }
@@ -229,6 +248,9 @@ pub async fn handle(args: TagsArgs, client: &GtmApiClient, format: &OutputFormat
                 "type": a.tag_type,
                 "parameter": parameters,
             });
+            for (key, val) in top_level {
+                body[key] = val;
+            }
             if !a.firing_trigger_id.is_empty() {
                 body["firingTriggerId"] = json!(a.firing_trigger_id);
             }
@@ -252,11 +274,15 @@ pub async fn handle(args: TagsArgs, client: &GtmApiClient, format: &OutputFormat
                 body["parameter"] = json!(params_from_json(&json!({"html": html})));
             } else if a.params.is_some() || a.params_file.is_some() {
                 let mut raw = resolve_params(&a.params, &a.params_file)?;
+                let top_level = extract_top_level_fields(&mut raw);
                 let tag_type = body.get("type").and_then(|v| v.as_str()).unwrap_or("");
                 if tag_type == "gaawe" {
                     transform_event_params(&mut raw);
                 }
                 body["parameter"] = json!(params_from_json(&raw));
+                for (key, val) in top_level {
+                    body[key] = val;
+                }
             }
             if !a.firing_trigger_id.is_empty() {
                 body["firingTriggerId"] = json!(a.firing_trigger_id);
